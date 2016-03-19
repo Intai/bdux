@@ -2,26 +2,40 @@ import R from 'ramda';
 import Bacon from 'baconjs';
 import { getActionStream } from './dispatcher'
 
+const hasMiddlewareType = (concat, type, middleware) => (
+  R.is(Function, middleware[type])
+);
+
+const concatMiddlewareByType = (concat, type, middleware) => (
+  concat(middleware[type])
+);
+
+const concatMiddleware = R.cond([
+  [R.complement(R.nthArg(2)), R.F],
+  [hasMiddlewareType, concatMiddlewareByType]
+]);
+
 // pluggables before store reducer.
-let preReduces = [];
+const preReduces = (() => {
+  let array = [];
+  return (middleware) => (
+    array = concatMiddleware(
+      R.concat(array), 'getPreReduce', middleware) || array
+  );
+})();
+
 // pluggables after store reducer.
-let postReduces = [];
-
-const setPreReduce = (middleware) => {
-  if (middleware.getPreReduce) {
-    preReduces = R.concat(preReduces, middleware.getPreReduce);
-  }
-};
-
-const setPostReduce = (middleware) => {
-  if (middleware.getPostReduce) {
-    postReduces = R.concat(postReduces, middleware.getPostReduce);
-  }
-};
+const postReduces = (() => {
+  let array = [];
+  return (middleware) => (
+    array = concatMiddleware(
+      R.concat(array), 'getPostReduce', middleware) || array
+  );
+})();
 
 const setPrePostReduce = R.pipe(
-  R.tap(setPreReduce),
-  setPostReduce
+  R.tap(preReduces),
+  postReduces
 );
 
 const mapPreArgs = (...args) => (
@@ -54,7 +68,7 @@ const plugPreAndReducer = (name, getReducer, reducerArgs) => {
       // merge in the store name.
       .map(R.merge({ name: name })),
     // to pre-reduce middlewares and reducer.
-    R.flatten([preReduces, getReducer])
+    R.flatten([preReduces(), getReducer])
   );
 
   return [name,
@@ -71,7 +85,7 @@ const plugPostReduce = ([name, reducerArgs]) => (
       // merge in the store name.
       .map(R.merge({ name: name })),
     // to post-reduce middlewares.
-    postReduces
+    postReduces()
   )
   // get the reduced state.
   .map(R.prop('nextState'))
