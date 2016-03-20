@@ -5,7 +5,7 @@
   "main": "lib/main.js",
   "scripts": {
     "test": "gulp test",
-    "prepublish": "gulp babel"
+    "prepublish": "gulp build"
   },
   "repository": {
     "type": "git",
