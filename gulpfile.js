@@ -4,14 +4,15 @@ var gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
     babel = require('babel-core/register'),
     isparta = require('isparta'),
-    files = './src/**/*.js';
+    srcFiles = './src/**/*.js',
+    testFiles = './test/**/*.spec.js';
 
 gulp.task('clean', function () {
   require('del').sync('lib');
 });
 
 gulp.task('instrument', function(cb) {
-  gulp.src(files)
+  gulp.src(srcFiles)
     .pipe($.istanbul({
       instrumenter: isparta.Instrumenter,
       includeUntested: true
@@ -21,7 +22,7 @@ gulp.task('instrument', function(cb) {
 })
 
 gulp.task('cover', ['instrument'], function() {
-  return gulp.src('./test/**/*.spec.js', { read: false })
+  return gulp.src(testFiles, { read: false })
     .pipe($.mocha())
     .pipe($.istanbul.writeReports({
       dir: './coverage',
@@ -31,30 +32,34 @@ gulp.task('cover', ['instrument'], function() {
 });
 
 gulp.task('test', function() {
-  return gulp.src('./test/**/*.spec.js', { read: false })
+  return gulp.src(testFiles, { read: false })
     .pipe($.mocha());
 });
 
 gulp.task('lint', function () {
-  return gulp.src(files)
+  return gulp.src(srcFiles)
     .pipe($.eslint())
     .pipe($.eslint.format())
     .pipe($.eslint.failAfterError());
 });
 
 gulp.task('babel', function() {
-  return gulp.src(files)
+  return gulp.src(srcFiles)
     .pipe($.babel())
     .pipe(gulp.dest('lib'));
 });
 
 gulp.task('watch', function() {
-  gulp.watch(files + '.js', ['babel']);
+  gulp.watch([srcFiles, testFiles], ['test']);
 });
+
+gulp.task('build', [
+  'clean',
+  'babel'
+]);
 
 gulp.task('default', [
   'lint',
-  'clean',
-  'babel',
+  'test',
   'watch'
 ]);
