@@ -4,8 +4,12 @@ import Bacon from 'baconjs';
 // stream actions from creators to stores.
 const actionStream = new Bacon.Bus();
 
+const now = Date.now || (() => (
+  (new Date()).getTime()
+));
+
 const generateId = (() => {
-  let id = 0;
+  let id = now() * 1000;
   return () => (++id);
 })();
 
