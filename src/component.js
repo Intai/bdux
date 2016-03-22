@@ -28,7 +28,7 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
     getDefaultProps: () => ({}),
     getInitialState: () => ({}),
 
-    componentDidMount: function() {
+    componentWillMount: function() {
       // pipe all dispose functions.
       this.dispose = pipeFuncs(
         // get the array of dispose functions.
