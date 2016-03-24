@@ -205,5 +205,8 @@ applyMiddleware(
 );
 ```
 
-### Examples
+## Examples
 - [Countdown](https://github.com/Intai/bdux-examples/tree/master/countdown)
+
+## License
+[The ISC License](./LICENSE.md)
