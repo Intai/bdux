@@ -118,3 +118,38 @@ export default createStore(
 ```
 
 ## Component
+Component with dependent stores can be created using `createComponent(Componenet, stores, ...callbacks)`.
+- `Component` is a React component.
+- `stores` is an object of dependent stores.
+- `callbacks` are functions to be triggered after subscribing to stores.
+
+Example of a component:
+``` javascript
+import R from 'ramda';
+import React from 'react';
+import CountDownAction from '../actions/countdown-action';
+import CountDownStore from '../stores/countdown-store';
+import { createComponent } from 'bdux'
+
+const renderCountDown = (countdown) => (
+  <span>{ countdown }</span>
+);
+
+const render = R.ifElse(
+  R.is(Number),
+  renderCountDown,
+  R.always(<noscript />)
+);
+
+export const CountDown = ({ countdown }) => (
+  render(countdown)
+);
+
+export default createComponent(CountDown, {
+  countdown: CountDownStore
+},
+// start counting down.
+CountDownAction.countdown);
+```
+
+## Middleware
