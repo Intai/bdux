@@ -1,5 +1,4 @@
-Bdux
-=======
+# Bdux
 
 A [Flux](https://github.com/facebook/flux/) architecture implementation out of enjoyment of [Bacon.js](https://baconjs.github.io/), [Redux](http://redux.js.org/) and [React](https://facebook.github.io/react/).
 
