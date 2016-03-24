@@ -23,7 +23,7 @@ Action creator returns:
 Then `bindToDispatch` binds a single action creator or an object of action creators to dispatch actions to stores.
 
 Example of action creators:
-```
+``` javascript
 import ActionTypes from './action-types';
 import { bindToDispatch } from 'bdux';
 
@@ -53,4 +53,68 @@ export default bindToDispatch({
 ```
 
 ## Store
+Store is created using `createStore(name, getReducer)`.
+- `name` is a unique store name.
+- `getReducer` returns a reducer as `Pluggable` which is an object contains the input and output of a stream.
+
+Reducer stream:
+- Receives an input object `{ action, state, ...dependencies }`.
+- Should output the next state according purely on the input object.
+- Should **NOT** have intermediate state. e.g. `scan` or `skipDuplicates`.
+- Should **NOT** have side effect. e.g. `flatMap` or `throttle`.
+
+Example of a store:
+``` javascript
+import R from 'ramda';
+import Bacon from 'baconjs';
+import ActionTypes from '../actions/action-types';
+import StoreNames from '../stores/store-names';
+import { createStore } from 'bdux';
+
+const isAction = R.pathEq(
+  ['action', 'type']
+);
+
+const mergeState = (name, getValue) => (
+  R.converge(R.mergeWith(R.merge), [
+    R.identity,
+    R.pipe(
+      getValue,
+      R.objOf(name),
+      R.objOf('state')
+    )
+  ])
+);
+
+const whenCancel = R.when(
+  isAction(ActionTypes.CANCEL),
+  mergeState('confirm', R.always(false))
+);
+
+const whenConfirm = R.when(
+  isAction(ActionTypes.CONFIRM),
+  mergeState('confirm', R.always(true))
+);
+
+const getOutputStream = (reducerStream) => (
+  reducerStream
+    .map(whenCancel)
+    .map(whenConfirm)
+    .map(R.prop('state'))
+);
+
+export const getReducer = () => {
+  let reducerStream = new Bacon.Bus();
+
+  return {
+    input: reducerStream,
+    output: getOutputStream(reducerStream)
+  };
+};
+
+export default createStore(
+  StoreNames.DIALOG, getReducer
+);
+```
+
 ## Component
