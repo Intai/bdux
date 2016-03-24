@@ -153,3 +153,57 @@ CountDownAction.countdown);
 ```
 
 ## Middleware
+Middleware exports `getPreReduce` and `getPostReduce` optionally.
+- `getPreReduce` returns a `Pluggable` stream to be applied before all reducers.
+- `getPostReduce` returns a `Pluggable` stream to be applied after reducers.
+
+Example of a middleware:
+``` javascript
+import Bacon from 'baconjs';
+
+const logPreReduce = ({ action }) => {
+  console.log('before reducer');
+};
+
+const logPostReduce = ({ nextState }) => {
+  console.log('after reducer');
+};
+
+export const getPreReduce = () => {
+  let preStream = new Bacon.Bus();
+
+  return {
+    input: preStream,
+    output: preStream
+      .doAction(logPreReduce)
+  };
+};
+
+export const getPostReduce = () => {
+  let postStream = new Bacon.Bus();
+
+  return {
+    input: postStream,
+    output: postStream
+      .doAction(logPostReduce)
+  };
+};
+```
+
+## Apply middleware
+Middleware should be configured before importing any store.
+
+Example of applying middlewares:
+``` javascript
+import * as Logger from 'bdux-logger';
+import * as Timetravel from 'bdux-timetravel';
+import { applyMiddleware } from 'bdux';
+
+applyMiddleware(
+  Timetravel,
+  Logger
+);
+```
+
+### Examples
+- [Countdown](https://github.com/Intai/bdux-examples/tree/master/countdown)
