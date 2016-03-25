@@ -46,14 +46,20 @@ const mapPreArgs = (...args) => (
   args[2])
 );
 
-const mapPostArgs = (...args) => (
-  R.merge({
-    action: args[1],
-    state: args[2],
-    nextState: args[0]
-  },
-  args[3])
+const mergeNextState = (reducerArgs, nextState) => (
+  R.merge(reducerArgs, {
+    nextState: nextState
+  })
 );
+
+const wrapReducer = (getReducer) => (() => {
+  let pluggable = getReducer();
+  return {
+    input: pluggable.input,
+    output: pluggable.input.toProperty({})
+      .sampledBy(pluggable.output, mergeNextState)
+  }
+});
 
 const plugStreams = (fromStream, getPluggable) => {
   let pluggable = getPluggable();
@@ -61,31 +67,14 @@ const plugStreams = (fromStream, getPluggable) => {
   return pluggable.output;
 };
 
-const plugPreAndReducer = (name, getReducer, reducerArgs) => {
-  let reducedStream = R.reduce(plugStreams,
+const plugPreReducerPost = (name, getReducer, reducerArgs) => (
+  R.reduce(plugStreams,
     // pass action and store states,
     Bacon.when(reducerArgs, mapPreArgs)
       // merge in the store name.
       .map(R.merge({ name: name })),
-    // to pre-reduce middlewares and reducer.
-    R.flatten([preReduces(), getReducer])
-  );
-
-  return [name,
-    // turn action stream to property to be sampled.
-    R.concat([reducedStream, reducerArgs[0].toProperty({})],
-      // store properties.
-      R.slice(1, Infinity, reducerArgs))];
-};
-
-const plugPostReduce = ([name, reducerArgs]) => (
-  R.reduce(plugStreams,
-    // pass information to post-reduce middleware.
-    Bacon.when(reducerArgs, mapPostArgs)
-      // merge in the store name.
-      .map(R.merge({ name: name })),
-    // to post-reduce middlewares.
-    postReduces()
+    // to pre-reduce middlewares, reducer then post-reduce.
+    R.flatten([preReduces(), wrapReducer(getReducer), postReduces()])
   )
   // get the reduced state.
   .map(R.prop('nextState'))
@@ -108,12 +97,9 @@ export const createStore = (name, getReducer, otherStores = {}) => {
       reducerArgs = [getActionStream(), storeProperty, otherProperties];
 
   storeStream.plug(
-    R.pipe(
-      plugPreAndReducer,
-      plugPostReduce
-    // store name and reducer.
+    // store name, reducer and
     // an array of action and store states.
-    )(name, getReducer, reducerArgs)
+    plugPreReducerPost(name, getReducer, reducerArgs)
   );
 
   return {
