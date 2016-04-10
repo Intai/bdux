@@ -1,5 +1,6 @@
 import R from 'ramda';
 import React from 'react';
+import Common from './utils/common-util';
 
 const getDisplayName = (Component) => (
   Component.displayName || Component.name || 'Component'
@@ -49,8 +50,16 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
     },
 
     render: function() {
-      return React.createElement(
+      let element = React.createElement(
         Component, R.merge(this.props, this.state));
+
+      // assuming server renders only once.
+      if (!Common.canUseDOM()) {
+        // unmount after rendering.
+        this.componentWillUnmount();
+      }
+
+      return element;
     }
   })
 );
