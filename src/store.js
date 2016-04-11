@@ -92,9 +92,19 @@ export const applyMiddleware = (...args) => {
 
 export const createStore = (name, getReducer, otherStores = {}) => {
   let storeStream = new Bacon.Bus(),
+      valveStream = new Bacon.Bus(),
       storeProperty = storeStream.toProperty(null),
+      valveProperty = valveStream.toProperty(false),
       otherProperties = getStoreProperties(otherStores),
-      reducerArgs = [getActionStream(), storeProperty, otherProperties];
+      actionStream = getActionStream().holdWhen(valveProperty),
+      reducerArgs = [actionStream, storeProperty, otherProperties];
+
+  valveStream.plug(Bacon.mergeAll(
+    // hold and queue up other actions.
+    actionStream.map(R.always(true)),
+    // release the next action after reducing.
+    storeStream.map(R.always(false))
+  ));
 
   storeStream.plug(
     // store name, reducer and
