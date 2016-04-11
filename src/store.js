@@ -61,14 +61,15 @@ const wrapReducer = (getReducer) => (() => {
   }
 });
 
-const plugStreams = (fromStream, getPluggable) => {
-  let pluggable = getPluggable();
+const plugStreams = R.curry((name, fromStream, getPluggable) => {
+  let pluggable = getPluggable(name);
   pluggable.input.plug(fromStream);
   return pluggable.output;
-};
+});
 
 const plugPreReducerPost = (name, getReducer, reducerArgs) => (
-  R.reduce(plugStreams,
+  // pass the store name to middlewares.
+  R.reduce(plugStreams(name),
     // pass action and store states,
     Bacon.when(reducerArgs, mapPreArgs)
       // merge in the store name.
