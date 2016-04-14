@@ -52,9 +52,10 @@ export default bindToDispatch({
 ```
 
 ## Store
-Store is created using `createStore(name, getReducer)`.
+Store is created using `createStore(name, getReducer, otherStores = {})`.
 - `name` is a unique store name.
 - `getReducer` returns a reducer as `Pluggable` which is an object contains the input and output of a stream.
+- `otherStores` is an object of dependent stores.
 
 Reducer stream:
 - Receives an input object `{ action, state, ...dependencies }`.
@@ -119,7 +120,7 @@ export default createStore(
 ```
 
 ## Component
-Component with dependent stores can be created using `createComponent(Componenet, stores, ...callbacks)`.
+Component with dependent stores can be created using `createComponent(Componenet, stores = {}, ...callbacks)`.
 - `Component` is a React component.
 - `stores` is an object of dependent stores.
 - `callbacks` are functions to be triggered after subscribing to stores.
