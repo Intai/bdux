@@ -36,9 +36,9 @@ const pushAction = (action) => {
 const dispatchAction = R.ifElse(
   R.is(Bacon.Observable),
   // plug an observable to flow actions through the dispatcher.
-  plugObservable,
+  R.tap(plugObservable),
   // push a single action through the dispatcher.
-  pushAction
+  R.tap(pushAction)
 );
 
 const dispatchActionCreator = R.pipe(
