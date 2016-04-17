@@ -1,4 +1,5 @@
 import R from 'ramda';
+import Bacon from 'baconjs';
 import React from 'react';
 import Common from './utils/common-util';
 
@@ -6,7 +7,7 @@ const getDisplayName = (Component) => (
   Component.displayName || Component.name || 'Component'
 );
 
-const subscribe = (component, store, name) => (
+const subscribe = R.curry((component, store, name) => (
   // subscribe to a store.
   store.getProperty().onValue((state) => {
     // pass its state to the react component.
@@ -15,6 +16,19 @@ const subscribe = (component, store, name) => (
       [name]: state
     });
   })
+));
+
+const getProperties = R.map(
+  R.invoker(0, 'getProperty')
+);
+
+const triggerCallbacks = (stores, callbacks) => (
+  Bacon.combineTemplate(
+    getProperties(stores)
+  )
+  .first()
+  .map(R.of)
+  .onValue(R.ap(callbacks))()
 );
 
 const pipeFuncs = R.ifElse(
@@ -36,13 +50,13 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
         R.values(
           // subscribe to stores.
           R.mapObjIndexed(
-            R.curry(subscribe)(this),
+            subscribe(this),
             stores)
         )
       );
 
       // trigger callbacks after subscribing to stores.
-      pipeFuncs(callbacks)();
+      triggerCallbacks(stores, callbacks);
     },
 
     componentWillUnmount: function() {
