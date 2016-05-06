@@ -2,3 +2,4 @@ gulpfile.js
 coverage
 test
 src
+.*
