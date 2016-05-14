@@ -63,7 +63,7 @@ Reducer stream:
 - Should **NOT** have intermediate state. e.g. `scan` or `skipDuplicates`.
 - Should **NOT** have side effect. e.g. `flatMap` or `throttle`.
 
-Have intermediate states and side effects in action creators instead. So time travelling can be achieved, and there is a single point to monitor all actions which could cause state changes.
+Have intermediate states and side effects in action creators instead. So time travelling can be achieved, and there is a single point to monitor all actions which could cause state changes. Store can dispatch actions which will be queued to cause state changes in other stores.
 
 Example of a store:
 ``` javascript
