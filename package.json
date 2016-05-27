@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/Intai/bdux",
   "dependencies": {
-    "ramda": "^0.19.1"
+    "ramda": "^0.21.0"
   },
   "devDependencies": {
     "babel-core": "^6.7.2",
@@ -39,10 +39,9 @@
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "gulp-eslint": "^2.0.0",
-    "gulp-istanbul": "^0.10.3",
     "gulp-load-plugins": "^1.2.0",
     "gulp-mocha": "^2.2.0",
-    "isparta": "^4.0.0",
+    "istanbul": "^1.0.0-alpha.2",
     "mocha": "^2.4.5",
     "react": "^0.14.7",
     "sinon": "^1.17.3"

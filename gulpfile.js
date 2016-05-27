@@ -3,7 +3,7 @@
 var gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
     babel = require('babel-core/register'),
-    isparta = require('isparta'),
+    spawn = require('child_process').spawn,
     srcFiles = './src/**/*.js',
     testFiles = './test/**/*.spec.js';
 
@@ -11,24 +11,18 @@ gulp.task('clean', function () {
   require('del').sync('lib');
 });
 
-gulp.task('instrument', function(cb) {
-  gulp.src(srcFiles)
-    .pipe($.istanbul({
-      instrumenter: isparta.Instrumenter,
-      includeUntested: true
-    }))
-    .pipe($.istanbul.hookRequire())
-    .on('finish', cb)
-})
+gulp.task('cover', function(cb) {
+  var cmd = spawn('node', [
+    'node_modules/istanbul/lib/cli.js',
+    'cover',
+    '--root', '.',
+    'node_modules/mocha/bin/_mocha',
+    '--', '--opts', '.mocha.opts'
+  ], {
+    stdio: 'inherit'
+  });
 
-gulp.task('cover', ['instrument'], function() {
-  return gulp.src(testFiles, { read: false })
-    .pipe($.mocha())
-    .pipe($.istanbul.writeReports({
-      dir: './coverage',
-      reportOpts: { dir: './coverage' },
-      reporters: ['html']
-    }));
+  cmd.on('close', cb);
 });
 
 gulp.task('test', function() {
