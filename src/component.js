@@ -68,7 +68,7 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
         Component, R.merge(this.props, this.state));
 
       // assuming server renders only once.
-      if (!Common.canUseDOM()) {
+      if (Common.isOnServer()) {
         // unmount after rendering.
         this.componentWillUnmount();
       }
