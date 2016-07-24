@@ -22,12 +22,13 @@ const mergeId = R.converge(
 
 const plugObservable = (observable) => {
   actionStream.plug(observable
+    .filter(R.is(Object))
     // merge in an action identifier.
     .map(mergeId));
 };
 
 const pushAction = (action) => {
-  if (action) {
+  if (R.is(Object, action)) {
     // merge in an identifier.
     actionStream.push(mergeId(action));
   }

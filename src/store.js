@@ -2,6 +2,9 @@ import R from 'ramda';
 import Bacon from 'baconjs';
 import { getActionStream } from './dispatcher'
 
+const STATUS_DISPATCH = 'dispatch'
+const STATUS_ONHOLD = 'onhold'
+
 const hasMiddlewareType = (concat, type, middleware) => (
   R.is(Function, middleware[type])
 );
@@ -86,6 +89,48 @@ const getStoreProperties = R.pipe(
   Bacon.combineTemplate
 );
 
+const getAccumSeed = () => ({
+  status: STATUS_DISPATCH,
+  queue: []
+})
+
+const shiftFromActionQueue = (accum, payload) => ({
+  status: STATUS_DISPATCH,
+  queue: R.drop(1, accum.queue)
+})
+
+const pushActionOnhold = (accum, payload) => ({
+  status: STATUS_ONHOLD,
+  queue: R.append(payload.action, accum.queue)
+})
+
+const pushActionDispatch = (accum, payload) => ({
+  status: STATUS_DISPATCH,
+  queue: [payload.action]
+})
+
+const pushToActionQueue = R.ifElse(
+  // if the action queue is not empty.
+  R.pipe(R.prop('queue'), R.length, R.lt(0)),
+  pushActionOnhold,
+  pushActionDispatch
+)
+
+const accumAction = R.ifElse(
+  R.nthArg(1),
+  pushToActionQueue,
+  shiftFromActionQueue
+)
+
+const isActionQueueOnhold = R.propEq(
+  'status', STATUS_ONHOLD
+)
+
+const getFirstActionInQueue = R.pipe(
+  R.prop('queue'),
+  R.head
+)
+
 export const applyMiddleware = (...args) => {
   // loop through an array of middlewares.
   R.forEach(setPrePostReduce, args);
@@ -97,26 +142,27 @@ export const createStore = (name, getReducer, otherStores = {}) => {
       storeProperty = storeStream.toProperty(null),
       otherProperties = getStoreProperties(otherStores);
 
-  // valve for action dispatcher.
-  let valveStream = new Bacon.Bus(),
-      valveProperty = valveStream.toProperty(false);
-
-  // action stream and store properties.
-  let actionStream = Bacon.when([getActionStream()], R.identity).holdWhen(valveProperty),
-      reducerArgs = [actionStream, storeProperty, otherProperties];
-
-  // turn valve on or off.
-  valveStream.plug(Bacon.mergeAll(
-    // hold and queue up other actions.
-    actionStream.map(R.T),
-    // release the next action after reducing.
-    storeStream.map(R.F)
-  ));
+  const actionStream = Bacon.when(
+    [getActionStream()], R.objOf('action'),
+    [storeStream], R.F
+  )
+  // accumulate actions into a filo queue.
+  .scan(getAccumSeed(), accumAction)
+  // filter out when the queue is on hold.
+  .filter(R.complement(isActionQueueOnhold))
+  // get the first action object in queue.
+  .map(getFirstActionInQueue)
+  .filter(R.is(Object))
+  .changes()
 
   storeStream.plug(
     // store name, reducer and
     // an array of action and store states.
-    plugPreReducerPost(name, getReducer, reducerArgs)
+    plugPreReducerPost(name, getReducer, [
+      actionStream,
+      storeProperty,
+      otherProperties
+    ])
   );
 
   return {
