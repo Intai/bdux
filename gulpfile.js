@@ -5,7 +5,7 @@ var gulp = require('gulp'),
     babel = require('babel-core/register'),
     spawn = require('child_process').spawn,
     srcFiles = './src/**/*.js',
-    testFiles = './test/**/*.spec.js';
+    testFiles = './src/**/*.spec.js';
 
 gulp.task('clean', function () {
   require('del').sync('lib');
