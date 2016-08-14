@@ -122,10 +122,4 @@ describe('Dispatcher', () => {
     })
   })
 
-  it('should get time from date object', () => {
-    Date.now = null
-    chai.expect(getTimeFunc()).to.be.a('function')
-    chai.expect(getTimeFunc()()).to.be.a('number')
-  })
-
 })

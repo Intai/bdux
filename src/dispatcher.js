@@ -1,18 +1,12 @@
 import R from 'ramda'
 import Bacon from 'baconjs'
+import Common from './utils/common-util'
 
 // stream actions from creators to stores.
 const actionStream = new Bacon.Bus()
 
-// export for testing.
-export const getTimeFunc = () => (
-  Date.now || (() => new Date().getTime())
-)
-
-const now = getTimeFunc()
-
 const generateId = (() => {
-  let id = now() * 1000
+  let id = Common.now() * 1000
   return () => (++id)
 })()
 

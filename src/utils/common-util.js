@@ -12,7 +12,13 @@ export const isReactNative = () => (
     && window.navigator.product === 'ReactNative'
 )
 
+export const getTimeFunc = () => (
+  Date.now || (() => new Date().getTime())
+)
+
 export default {
+
+  now: getTimeFunc(),
 
   isOnServer: R.once(
     R.complement(

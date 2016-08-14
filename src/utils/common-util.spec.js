@@ -2,7 +2,8 @@ import chai from 'chai'
 import sinon from 'sinon'
 import Common, {
   canUseDOM,
-  isReactNative } from './common-util'
+  isReactNative,
+  getTimeFunc } from './common-util'
 
 describe('Common Utilities', () => {
 
@@ -46,6 +47,12 @@ describe('Common Utilities', () => {
   it('should be in react native according to navigator', () => {
     global.window = { navigator: { product: 'ReactNative' } }
     chai.expect(isReactNative()).to.be.ok
+  })
+
+  it('should get time from date object', () => {
+    Date.now = null
+    chai.expect(getTimeFunc()).to.be.a('function')
+    chai.expect(getTimeFunc()()).to.be.a('number')
   })
 
 })
