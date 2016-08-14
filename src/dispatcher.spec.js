@@ -4,7 +4,7 @@ import Bacon from 'baconjs'
 import {
   bindToDispatch,
   getActionStream,
-  getTimeFunc } from '../src/main'
+  getTimeFunc } from './dispatcher'
 
 describe('Dispatcher', () => {
 

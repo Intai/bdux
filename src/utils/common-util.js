@@ -1,12 +1,12 @@
 import R from 'ramda';
 
-const canUseDOM = () => (
+export const canUseDOM = () => (
   typeof window !== 'undefined'
     && window.document
     && window.document.createElement
 )
 
-const isReactNative = () => (
+export const isReactNative = () => (
   typeof window !== 'undefined'
     && window.navigator
     && window.navigator.product === 'ReactNative'

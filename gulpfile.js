@@ -16,6 +16,7 @@ gulp.task('cover', function(cb) {
     'node_modules/istanbul/lib/cli.js',
     'cover',
     '--root', '.',
+    '-x', '**/*.spec.js',
     'node_modules/mocha/bin/_mocha',
     '--', '--opts', '.mocha.opts'
   ], {
