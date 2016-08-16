@@ -1,45 +1,53 @@
-import R from 'ramda';
-import Bacon from 'baconjs';
+import R from 'ramda'
+import Bacon from 'baconjs'
 import { getActionStream } from './dispatcher'
 
 const STATUS_DISPATCH = 'dispatch'
 const STATUS_ONHOLD = 'onhold'
 
-const hasMiddlewareType = (concat, type, middleware) => (
-  R.is(Function, middleware[type])
-);
+const hasMiddlewareType = (type, middleware) => (
+  middleware && R.is(Function, middleware[type])
+)
 
-const concatMiddlewareByType = (concat, type, middleware) => (
-  concat(middleware[type])
-);
+const appendMiddlewareByType = R.converge(
+  R.append, [
+    R.prop,
+    R.nthArg(2)
+  ]
+)
 
-const concatMiddleware = R.cond([
-  [R.complement(R.nthArg(2)), R.F],
-  [hasMiddlewareType, concatMiddlewareByType]
-]);
+const appendMiddleware = R.curryN(3,
+  R.ifElse(
+    hasMiddlewareType,
+    appendMiddlewareByType,
+    R.nthArg(2)
+  )
+)
+
+const createCollection = (append) => {
+  let array = []
+
+  return {
+    get: () => array,
+    append: (middleware) => array = append(middleware, array),
+    clear: () => array = []
+  }
+}
 
 // pluggables before store reducer.
-const preReduces = (() => {
-  let array = [];
-  return (middleware) => (
-    array = concatMiddleware(
-      R.concat(array), 'getPreReduce', middleware) || array
-  );
-})();
+const preReduces = createCollection(
+  appendMiddleware('getPreReduce')
+)
 
 // pluggables after store reducer.
-const postReduces = (() => {
-  let array = [];
-  return (middleware) => (
-    array = concatMiddleware(
-      R.concat(array), 'getPostReduce', middleware) || array
-  );
-})();
+const postReduces = createCollection(
+  appendMiddleware('getPostReduce')
+)
 
-const setPrePostReduce = R.pipe(
-  R.tap(preReduces),
-  postReduces
-);
+const appendPrePostReduce = R.juxt([
+  preReduces.append,
+  postReduces.append
+])
 
 const mapPreArgs = (...args) => (
   R.merge({
@@ -47,28 +55,28 @@ const mapPreArgs = (...args) => (
     state: args[1]
   },
   args[2])
-);
+)
 
 const mergeNextState = (reducerArgs, nextState) => (
   R.merge(reducerArgs, {
     nextState: nextState
   })
-);
+)
 
 const wrapReducer = (getReducer) => (() => {
-  let pluggable = getReducer();
+  let pluggable = getReducer()
   return {
     input: pluggable.input,
     output: pluggable.input.toProperty({})
       .sampledBy(pluggable.output, mergeNextState)
   }
-});
+})
 
 const plugStreams = R.curry((name, fromStream, getPluggable) => {
-  let pluggable = getPluggable(name);
-  pluggable.input.plug(fromStream);
-  return pluggable.output;
-});
+  let pluggable = getPluggable(name)
+  pluggable.input.plug(fromStream)
+  return pluggable.output
+})
 
 const plugPreReducerPost = (name, getReducer, reducerArgs) => (
   // pass the store name to middlewares.
@@ -78,16 +86,16 @@ const plugPreReducerPost = (name, getReducer, reducerArgs) => (
       // merge in the store name.
       .map(R.merge({ name: name })),
     // to pre-reduce middlewares, reducer then post-reduce.
-    R.flatten([preReduces(), wrapReducer(getReducer), postReduces()])
+    R.flatten([preReduces.get(), wrapReducer(getReducer), postReduces.get()])
   )
   // get the reduced state.
   .map(R.prop('nextState'))
-);
+)
 
 const getStoreProperties = R.pipe(
   R.map(R.invoker(0, 'getProperty')),
   Bacon.combineTemplate
-);
+)
 
 const getAccumSeed = () => ({
   status: STATUS_DISPATCH,
@@ -133,14 +141,26 @@ const getFirstActionInQueue = R.pipe(
 
 export const applyMiddleware = (...args) => {
   // loop through an array of middlewares.
-  R.forEach(setPrePostReduce, args);
-};
+  R.forEach(appendPrePostReduce, args)
+}
+
+export const clearMiddlewares = R.juxt([
+  preReduces.clear,
+  postReduces.clear
+])
+
+export const getMiddlewares = R.converge(
+  R.merge, [
+    R.pipe(preReduces.get, R.clone, R.objOf('preReduces')),
+    R.pipe(postReduces.get, R.clone, R.objOf('postReduces'))
+  ]
+)
 
 export const createStore = (name, getReducer, otherStores = {}) => {
   // store properties.
   let storeStream = new Bacon.Bus(),
       storeProperty = storeStream.toProperty(null),
-      otherProperties = getStoreProperties(otherStores);
+      otherProperties = getStoreProperties(otherStores)
 
   const actionStream = Bacon.when(
     [getActionStream()], R.objOf('action'),
@@ -163,9 +183,9 @@ export const createStore = (name, getReducer, otherStores = {}) => {
       storeProperty,
       otherProperties
     ])
-  );
+  )
 
   return {
     getProperty: () => storeProperty
-  };
-};
+  }
+}
