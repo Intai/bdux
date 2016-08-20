@@ -49,12 +49,12 @@ const appendPrePostReduce = R.juxt([
   postReduces.append
 ])
 
-const mapPreArgs = (...args) => (
+const mapPreArgs = (action, state, others) => (
   R.merge({
-    action: args[0],
-    state: args[1]
+    action: action,
+    state: state
   },
-  args[2])
+  others)
 )
 
 const mergeNextState = (reducerArgs, nextState) => (
@@ -166,7 +166,7 @@ export const createStore = (name, getReducer, otherStores = {}) => {
     [getActionStream()], R.objOf('action'),
     [storeStream], R.F
   )
-  // accumulate actions into a filo queue.
+  // accumulate actions into a fifo queue.
   .scan(getAccumSeed(), accumAction)
   // filter out when the queue is on hold.
   .filter(R.complement(isActionQueueOnhold))
