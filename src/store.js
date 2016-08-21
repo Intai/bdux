@@ -73,7 +73,7 @@ const wrapReducer = (getReducer) => () => {
 }
 
 const plugStreams = R.curry((name, fromStream, getPluggable) => {
-  let pluggable = getPluggable()
+  let pluggable = getPluggable(name)
   pluggable.input.plug(fromStream)
   return pluggable.output
 })
