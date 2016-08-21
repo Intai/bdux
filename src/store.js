@@ -130,6 +130,13 @@ const accumAction = R.ifElse(
   shiftFromActionQueue
 )
 
+const accumActionSeed = (getAccumSeed) => {
+  let accum = getAccumSeed()
+  return (action) => (
+    accum = accumAction(accum, action)
+  )
+}
+
 const isActionQueueOnhold = R.propEq(
   'status', STATUS_ONHOLD
 )
@@ -167,13 +174,12 @@ export const createStore = (name, getReducer, otherStores = {}) => {
     [storeStream], R.F
   )
   // accumulate actions into a fifo queue.
-  .scan(getAccumSeed(), accumAction)
+  .map(accumActionSeed(getAccumSeed))
   // filter out when the queue is on hold.
   .filter(R.complement(isActionQueueOnhold))
   // get the first action object in queue.
   .map(getFirstActionInQueue)
   .filter(R.is(Object))
-  .changes()
 
   // store name, reducer and
   // an array of action and store states.
