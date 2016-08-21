@@ -63,17 +63,17 @@ const mergeNextState = (reducerArgs, nextState) => (
   })
 )
 
-const wrapReducer = (getReducer) => (() => {
+const wrapReducer = (getReducer) => () => {
   let pluggable = getReducer()
   return {
     input: pluggable.input,
-    output: pluggable.input.toProperty({})
-      .sampledBy(pluggable.output, mergeNextState)
+    output: Bacon.zipWith(pluggable.input, pluggable.output,
+      mergeNextState)
   }
-})
+}
 
 const plugStreams = R.curry((name, fromStream, getPluggable) => {
-  let pluggable = getPluggable(name)
+  let pluggable = getPluggable()
   pluggable.input.plug(fromStream)
   return pluggable.output
 })
@@ -175,17 +175,22 @@ export const createStore = (name, getReducer, otherStores = {}) => {
   .filter(R.is(Object))
   .changes()
 
-  storeStream.plug(
-    // store name, reducer and
-    // an array of action and store states.
-    plugPreReducerPost(name, getReducer, [
+  // store name, reducer and
+  // an array of action and store states.
+  const reducedProperty = plugPreReducerPost(
+    name,
+    getReducer, [
       actionStream,
       storeProperty,
       otherProperties
-    ])
+    ]
   )
+  // push instead of plug to avoid cyclic subscription.
+  .doAction((args) => storeStream.push(args))
+  // default store state.
+  .toProperty(null)
 
   return {
-    getProperty: () => storeProperty
+    getProperty: () => reducedProperty
   }
 }

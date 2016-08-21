@@ -1,11 +1,11 @@
-import R from 'ramda';
-import Bacon from 'baconjs';
-import React from 'react';
-import Common from './utils/common-util';
+import R from 'ramda'
+import Bacon from 'baconjs'
+import React from 'react'
+import Common from './utils/common-util'
 
 const getDisplayName = (Component) => (
   Component.displayName || Component.name || 'Component'
-);
+)
 
 const subscribe = R.curry((component, store, name) => (
   // subscribe to a store.
@@ -14,13 +14,13 @@ const subscribe = R.curry((component, store, name) => (
     component.setState({
       // under the name specified.
       [name]: state
-    });
+    })
   })
-));
+))
 
 const getProperties = R.map(
   R.invoker(0, 'getProperty')
-);
+)
 
 const triggerCallbacks = (stores, callbacks) => (
   Bacon.combineTemplate(
@@ -29,21 +29,30 @@ const triggerCallbacks = (stores, callbacks) => (
   .first()
   .map(R.of)
   .onValue(R.ap(callbacks))()
-);
+)
+
+const hasFuncs = R.allPass([
+  R.is(Array),
+  R.complement(R.isEmpty)
+])
 
 const pipeFuncs = R.ifElse(
-  R.isEmpty,
-  R.always(),
-  R.apply(R.pipe)
-);
+  hasFuncs,
+  R.apply(R.pipe),
+  R.always(R.F)
+)
 
 export const createComponent = (Component, stores = {}, ...callbacks) => (
-  React.createClass({
-    displayName: getDisplayName(Component),
-    getDefaultProps: () => ({}),
-    getInitialState: () => ({}),
+  class extends React.Component {
+    static displayName = getDisplayName(Component)
+    static defaultProps = {}
+    state = {}
 
-    componentWillMount: function() {
+    constructor() {
+      super()
+    }
+
+    componentWillMount() {
       // pipe all dispose functions.
       this.dispose = pipeFuncs(
         // get the array of dispose functions.
@@ -53,27 +62,27 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
             subscribe(this),
             stores)
         )
-      );
+      )
 
       // trigger callbacks after subscribing to stores.
-      triggerCallbacks(stores, callbacks);
-    },
+      triggerCallbacks(stores, callbacks)
+    }
 
-    componentWillUnmount: function() {
-      this.dispose();
-    },
+    componentWillUnmount() {
+      this.dispose()
+    }
 
-    render: function() {
-      let element = React.createElement(
-        Component, R.merge(this.props, this.state));
+    render() {
+      const element = React.createElement(
+        Component, R.merge(this.props, this.state))
 
       // assuming server renders only once.
       if (Common.isOnServer()) {
         // unmount after rendering.
-        this.componentWillUnmount();
+        this.componentWillUnmount()
       }
 
-      return element;
+      return element
     }
-  })
-);
+  }
+)
