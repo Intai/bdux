@@ -37,9 +37,10 @@ const createLogger = (logPre, logPost) => (
 
 describe('Store', () => {
 
-  let clock
+  let sandbox, clock
 
   beforeEach(() => {
+    sandbox = sinon.sandbox.create()
     clock = sinon.useFakeTimers(Date.now())
   })
 
@@ -249,6 +250,32 @@ describe('Store', () => {
     chai.expect(logReduce.calledTwice).to.be.true
   })
 
+  it('should pass store name to middleware pluggable before reducer', () => {
+    const logger = createLogger()
+    sandbox.spy(logger, 'getPreReduce')
+    clearMiddlewares()
+    applyMiddleware(logger)
+
+    const store = createStore('name', createPluggable())
+    store.getProperty().onValue()
+    getActionStream().push({})
+    chai.expect(logger.getPreReduce.calledOnce).to.be.true
+    chai.expect(logger.getPreReduce.lastCall.args[0]).to.equal('name')
+  })
+
+  it('should pass store name to middleware pluggable after reducer', () => {
+    const logger = createLogger()
+    sandbox.spy(logger, 'getPostReduce')
+    clearMiddlewares()
+    applyMiddleware(logger)
+
+    const store = createStore('name', createPluggable())
+    store.getProperty().onValue()
+    getActionStream().push({})
+    chai.expect(logger.getPostReduce.calledOnce).to.be.true
+    chai.expect(logger.getPostReduce.lastCall.args[0]).to.equal('name')
+  })
+
   it('should flow through a single middleware before reducer', () => {
     const logPre = sinon.stub()
     const logger = createPreLogger(logPre)
@@ -343,6 +370,7 @@ describe('Store', () => {
 
   afterEach(() => {
     clock.restore()
+    sandbox.restore()
   })
 
 })
