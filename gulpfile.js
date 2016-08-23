@@ -4,7 +4,7 @@ var gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
     babel = require('babel-core/register'),
     spawn = require('child_process').spawn,
-    srcFiles = './src/**/*.js',
+    srcFiles = './src/**/!(*.spec).js',
     testFiles = './src/**/*.spec.js';
 
 gulp.task('clean', function () {
