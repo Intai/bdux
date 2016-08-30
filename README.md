@@ -59,7 +59,7 @@ Store is created using `createStore(name, getReducer, otherStores = {})`.
 
 Reducer stream:
 - Receives an input object `{ action, state, ...dependencies }`.
-- Should output the next state according purely on the input object.
+- Should always output the next state according purely on the input object.
 - Should **NOT** have intermediate state. e.g. `scan` or `skipDuplicates`.
 - Should **NOT** have side effect. e.g. `flatMap` or `throttle`.
 
