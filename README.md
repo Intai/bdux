@@ -94,12 +94,12 @@ const mergeState = (name, getValue) => (
 
 const whenCancel = R.when(
   isAction(ActionTypes.CANCEL),
-  mergeState('confirm', R.always(false))
+  mergeState('confirm', R.F)
 );
 
 const whenConfirm = R.when(
   isAction(ActionTypes.CONFIRM),
-  mergeState('confirm', R.always(true))
+  mergeState('confirm', R.T)
 );
 
 const getOutputStream = (reducerStream) => (
