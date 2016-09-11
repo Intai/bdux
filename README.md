@@ -3,6 +3,7 @@
 A [Flux](https://github.com/facebook/flux/) architecture implementation out of enjoyment of [Bacon.js](https://baconjs.github.io/), [Redux](http://redux.js.org/) and [React](https://facebook.github.io/react/).
 
 [![Build Status](https://travis-ci.org/Intai/bdux.svg?branch=master)](https://travis-ci.org/Intai/bdux)
+[![Coverage Status](https://coveralls.io/repos/github/Intai/bdux/badge.svg?branch=master)](https://coveralls.io/github/Intai/bdux?branch=master)
 
 ## Want to achieve
 - Reactive all the way from action to React component.
