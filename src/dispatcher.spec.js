@@ -1,10 +1,11 @@
+/* eslint-env mocha */
+
 import chai from 'chai'
 import sinon from 'sinon'
 import Bacon from 'baconjs'
 import {
   bindToDispatch,
-  getActionStream,
-  getTimeFunc } from './dispatcher'
+  getActionStream } from './dispatcher'
 
 describe('Dispatcher', () => {
 

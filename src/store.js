@@ -102,7 +102,7 @@ const getAccumSeed = () => ({
   queue: []
 })
 
-const shiftFromActionQueue = (accum, payload) => ({
+const shiftFromActionQueue = (accum) => ({
   status: STATUS_DISPATCH,
   queue: R.drop(1, accum.queue)
 })

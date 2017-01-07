@@ -1,3 +1,5 @@
+/* eslint-env mocha */
+
 import R from 'ramda'
 import chai from 'chai'
 import sinon from 'sinon'
@@ -127,7 +129,7 @@ describe('Store', () => {
 
   it('should be inactive without subscriber', () => {
     const logReduce = sinon.stub()
-    const store = createStore('name', createPluggable(logReduce))
+    createStore('name', createPluggable(logReduce))
     getActionStream().push({})
     chai.expect(logReduce.called).to.be.false
   })

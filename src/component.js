@@ -48,6 +48,7 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
     static defaultProps = {}
     state = {}
 
+    /* istanbul ignore next */
     constructor() {
       super()
     }

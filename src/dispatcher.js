@@ -39,15 +39,11 @@ const dispatchAction = R.ifElse(
   R.tap(pushAction)
 )
 
-const dispatchActionCreator = R.pipe(
+const wrapActionCreator = (creator) => R.pipe(
   // call the action creator.
-  R.call,
+  creator,
   // dispatch the returned action.
   dispatchAction
-)
-
-const wrapActionCreator = R.flip(R.wrap)(
-  dispatchActionCreator
 )
 
 const wrapActionCreators = R.map(
