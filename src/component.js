@@ -2,6 +2,7 @@ import R from 'ramda'
 import Bacon from 'baconjs'
 import React from 'react'
 import Common from './utils/common-util'
+import { decorators } from './middleware'
 
 const getDisplayName = (Component) => (
   Component.displayName || Component.name || 'Component'
@@ -47,7 +48,7 @@ const removeStores = R.uncurryN(2, (component) => R.forEachObjIndexed((store) =>
   store.removeProperty(component.props)
 }))
 
-export const createComponent = (Component, stores = {}, ...callbacks) => (
+const createComponentDecorated = (Component, stores, callbacks) => (
   class extends React.Component {
     static displayName = getDisplayName(Component)
     static defaultProps = {}
@@ -92,4 +93,15 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
       return element
     }
   }
+)
+
+const decorate = (Component) => (
+  R.isEmpty(decorators.get())
+    ? Component
+    : R.apply(R.pipe, decorators.get())(Component)
+)
+
+export const createComponent = (Component, stores = {}, ...callbacks) => (
+  createComponentDecorated(
+    decorate(Component), stores, callbacks)
 )

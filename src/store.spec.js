@@ -5,11 +5,10 @@ import chai from 'chai'
 import sinon from 'sinon'
 import Bacon from 'baconjs'
 import { getActionStream } from './dispatcher'
+import { createStore } from './store'
 import {
-  getMiddlewares,
   clearMiddlewares,
-  applyMiddleware,
-  createStore } from './store'
+  applyMiddleware } from './middleware'
 
 const createPluggable = (log) => () => {
   const stream = new Bacon.Bus()
@@ -28,13 +27,9 @@ const createPostLogger = (log) => ({
   getPostReduce: createPluggable(log)
 })
 
-const createLogger = (logPre, logPost) => (
-  R.converge(
-    R.merge, [
-      createPreLogger,
-      R.pipe(R.nthArg(1), createPostLogger)
-    ]
-  )(logPre, logPost)
+const createLogger = (logPre, logPost) => R.merge(
+  createPreLogger(logPre),
+  createPostLogger(logPost)
 )
 
 describe('Store', () => {
@@ -44,68 +39,6 @@ describe('Store', () => {
   beforeEach(() => {
     sandbox = sinon.sandbox.create()
     clock = sinon.useFakeTimers(Date.now())
-  })
-
-  it('should apply a single middleware before reducer', () => {
-    const logger = createPreLogger()
-    clearMiddlewares()
-    applyMiddleware(logger)
-    chai.expect(getMiddlewares()).to.eql({
-      preReduces: [logger.getPreReduce],
-      postReduces: []
-    })
-  })
-
-  it('should apply a single middleware after reducer', () => {
-    const logger = createPostLogger()
-    clearMiddlewares()
-    applyMiddleware(logger)
-    chai.expect(getMiddlewares()).to.eql({
-      preReduces: [],
-      postReduces: [logger.getPostReduce]
-    })
-  })
-
-  it('should apply a single middleware before and after reducer', () => {
-    const logger = createLogger()
-    clearMiddlewares()
-    applyMiddleware(logger)
-    chai.expect(getMiddlewares()).to.eql({
-      preReduces: [logger.getPreReduce],
-      postReduces: [logger.getPostReduce]
-    })
-  })
-
-  it('should apply multiple middlewares', () => {
-    const preLogger = createPreLogger()
-    const postLogger = createPostLogger()
-    clearMiddlewares()
-    applyMiddleware(preLogger, postLogger)
-    chai.expect(getMiddlewares()).to.eql({
-      preReduces: [preLogger.getPreReduce],
-      postReduces: [postLogger.getPostReduce]
-    })
-  })
-
-  it('should apply accumulate middlewares', () => {
-    const preLogger = createPreLogger()
-    const logger = createLogger()
-    clearMiddlewares()
-    applyMiddleware(preLogger, logger)
-    chai.expect(getMiddlewares()).to.eql({
-      preReduces: [preLogger.getPreReduce, logger.getPreReduce],
-      postReduces: [logger.getPostReduce]
-    })
-  })
-
-  it('should clear middlewares', () => {
-    const logger = createLogger()
-    applyMiddleware(logger)
-    clearMiddlewares()
-    chai.expect(getMiddlewares()).to.eql({
-      preReduces: [],
-      postReduces: []
-    })
   })
 
   it('should create a store property', () => {

@@ -1,53 +1,10 @@
 import R from 'ramda'
 import Bacon from 'baconjs'
 import { getActionStream } from './dispatcher'
+import { preReduces, postReduces } from './middleware'
 
 const STATUS_DISPATCH = 'dispatch'
 const STATUS_ONHOLD = 'onhold'
-
-const hasMiddlewareType = (type, middleware) => (
-  middleware && R.is(Function, middleware[type])
-)
-
-const appendMiddlewareByType = R.converge(
-  R.append, [
-    R.prop,
-    R.nthArg(2)
-  ]
-)
-
-const appendMiddleware = R.curryN(3,
-  R.ifElse(
-    hasMiddlewareType,
-    appendMiddlewareByType,
-    R.nthArg(2)
-  )
-)
-
-const createCollection = (append) => {
-  let array = []
-
-  return {
-    get: () => array,
-    append: (middleware) => array = append(middleware, array),
-    clear: () => array = []
-  }
-}
-
-// pluggables before store reducer.
-const preReduces = createCollection(
-  appendMiddleware('getPreReduce')
-)
-
-// pluggables after store reducer.
-const postReduces = createCollection(
-  appendMiddleware('getPostReduce')
-)
-
-const appendPrePostReduce = R.juxt([
-  preReduces.append,
-  postReduces.append
-])
 
 const mapPreArgs = (action, state, others) => (
   R.merge({
@@ -144,23 +101,6 @@ const isActionQueueOnhold = R.propEq(
 const getFirstActionInQueue = R.pipe(
   R.prop('queue'),
   R.head
-)
-
-export const applyMiddleware = (...args) => {
-  // loop through an array of middlewares.
-  R.forEach(appendPrePostReduce, args)
-}
-
-export const clearMiddlewares = R.juxt([
-  preReduces.clear,
-  postReduces.clear
-])
-
-export const getMiddlewares = R.converge(
-  R.merge, [
-    R.pipe(preReduces.get, R.clone, R.objOf('preReduces')),
-    R.pipe(postReduces.get, R.clone, R.objOf('postReduces'))
-  ]
 )
 
 const createStoreInstance = R.curry((getReducer, otherStores, name) => {

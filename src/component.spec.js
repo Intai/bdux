@@ -10,6 +10,9 @@ import { render, shallow } from 'enzyme'
 import { createComponent } from './component'
 import { getActionStream } from './dispatcher'
 import { createStore } from './store'
+import {
+  clearMiddlewares,
+  applyMiddleware } from './middleware'
 
 const createPluggable = (log) => () => {
   const stream = new Bacon.Bus()
@@ -19,6 +22,23 @@ const createPluggable = (log) => () => {
       .doAction(log)
   }
 }
+
+const createLogger = (log) => ({
+  decorateComponent: (Component) => (
+    class extends React.Component {
+      static displayName = 'Logger'
+
+      componentWillMount() {
+        log()
+      }
+
+      render() {
+        return React.createElement(
+          Component, this.props)
+      }
+    }
+  )
+})
 
 describe('Component', () => {
 
@@ -183,7 +203,8 @@ describe('Component', () => {
     shallow(<Test />)
     chai.expect(callback.calledOnce).to.be.true
     chai.expect(callback.lastCall.args[0]).to.eql({
-      test: null
+      test: null,
+      props: {}
     })
   })
 
@@ -200,8 +221,22 @@ describe('Component', () => {
     chai.expect(callback1.calledOnce).to.be.true
     chai.expect(callback2.calledOnce).to.be.true
     chai.expect(callback2.lastCall.args[0]).to.eql({
-      test: null
+      test: null,
+      props: {}
     })
+  })
+
+  it('should be decorated by middleware', () => {
+    const logMount = sinon.stub()
+    const logger = createLogger(logMount)
+    clearMiddlewares()
+    applyMiddleware(logger)
+
+    const Test = createComponent(() => <div />)
+    const wrapper = shallow(<Test />)
+    chai.expect(wrapper.name()).to.equal('Logger')
+    chai.expect(wrapper.html()).to.equal('<div></div>')
+    chai.expect(logMount.calledOnce).to.be.true
   })
 
   afterEach(() => {
