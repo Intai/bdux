@@ -163,7 +163,7 @@ export const getMiddlewares = R.converge(
   ]
 )
 
-export const createStore = (name, getReducer, otherStores = {}) => {
+const createStoreInstance = R.curry((getReducer, otherStores, name) => {
   // store properties.
   let storeStream = new Bacon.Bus(),
       storeProperty = storeStream.toProperty(null),
@@ -183,7 +183,7 @@ export const createStore = (name, getReducer, otherStores = {}) => {
 
   // store name, reducer and
   // an array of action and store states.
-  const reducedProperty = plugPreReducerPost(
+  return plugPreReducerPost(
     name,
     getReducer, [
       actionStream,
@@ -195,8 +195,62 @@ export const createStore = (name, getReducer, otherStores = {}) => {
   .doAction((args) => storeStream.push(args))
   // default store state.
   .toProperty(null)
+})
 
-  return {
-    getProperty: () => reducedProperty
-  }
+const getPropertyExisting = (name, instances) => [
+  instances,
+  R.prop(name, instances)
+]
+
+const getPropertyCreate = (name, instances, createInstance) => {
+  const instance = createInstance(name)
+  return [
+    R.assoc(name, instance, instances),
+    instance
+  ]
+}
+
+const getPropertyInstance = R.ifElse(
+  R.has,
+  getPropertyExisting,
+  getPropertyCreate
+)
+
+const configObject = R.when(
+  R.complement(R.is(Object)),
+  R.objOf('name')
+)
+
+const config = R.ifElse(
+  R.is(Function),
+  R.pipe(R.call, configObject),
+  configObject
+)
+
+const getProperty = R.curry((getConfig, createInstance, props, instances) => {
+  const { name } = config(getConfig, props)
+  return getPropertyInstance(name, instances, createInstance)
+})
+
+const removeProperty = R.curry((getConfig, props, instances) => {
+  const { name, isRemovable } = config(getConfig, props)
+  return [(isRemovable)
+    ? R.dissoc(name, instances)
+    : instances
+  ]
+})
+
+const memoizeStore = (funcs) => {
+  let ret, instances = {}
+  return R.map((func) => (props) => {
+    [instances, ret] = func(props, instances)
+    return ret
+  }, funcs)
+}
+
+export const createStore = (getConfig, getReducer, otherStores = {}) => {
+  return memoizeStore({
+    getProperty: getProperty(getConfig, createStoreInstance(getReducer, otherStores)),
+    removeProperty: removeProperty(getConfig)
+  })
 }

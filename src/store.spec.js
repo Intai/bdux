@@ -114,6 +114,51 @@ describe('Store', () => {
       .and.is.a('function')
   })
 
+  it('should get the same store property instance', () => {
+    const store = createStore('name', createPluggable())
+    chai.expect(store.getProperty()).to.equal(store.getProperty())
+  })
+
+  it('should get the same store property instance by props', () => {
+    const store = createStore(R.prop('id'), createPluggable())
+    const property1 = store.getProperty({ id: 1 })
+    const property2 = store.getProperty({ id: 1 })
+    chai.expect(property1).to.equal(property2)
+  })
+
+  it('should get different store property instances by props', () => {
+    const store = createStore(R.prop('id'), createPluggable())
+    const property1 = store.getProperty({ id: 1 })
+    const property2 = store.getProperty({ id: 2 })
+    chai.expect(property1).to.not.equal(property2)
+  })
+
+  it('should remove a store property instance of props', () => {
+    const getInstance = props => ({
+      name: props.id,
+      isRemovable: true
+    })
+
+    const store = createStore(getInstance, createPluggable())
+    const property1 = store.getProperty({ id: 1 })
+    store.removeProperty({ id: 1 })
+    const property2 = store.getProperty({ id: 1 })
+    chai.expect(property1).to.not.equal(property2)
+  })
+
+  it('should not remove a store property instance of props', () => {
+    const getInstance = props => ({
+      name: props.id,
+      isRemovable: false
+    })
+
+    const store = createStore(getInstance, createPluggable())
+    const property1 = store.getProperty({ id: 1 })
+    store.removeProperty({ id: 1 })
+    const property2 = store.getProperty({ id: 1 })
+    chai.expect(property1).to.equal(property2)
+  })
+
   it('should create a store property which is a bacon observable', () => {
     const store = createStore('name', createPluggable())
     chai.expect(store.getProperty()).to.be.instanceof(Bacon.Observable)
@@ -125,6 +170,22 @@ describe('Store', () => {
     store.getProperty().onValue(callback)
     chai.expect(callback.calledOnce).to.be.true
     chai.expect(callback.lastCall.args[0]).to.be.null
+  })
+
+  it('should create store properties which all default to null', () => {
+    const store = createStore(R.prop('id'), createPluggable())
+    const property1 = store.getProperty({ id: 1 })
+    const property2 = store.getProperty({ id: 2 })
+    const callback1 = sinon.stub()
+    const callback2 = sinon.stub()
+    property1.onValue(callback1)
+    getActionStream().push({})
+    property2.onValue(callback2)
+
+    chai.expect(callback1.calledTwice).to.be.true
+    chai.expect(callback1.firstCall.args[0]).to.be.null
+    chai.expect(callback2.calledOnce).to.be.true
+    chai.expect(callback2.lastCall.args[0]).to.be.null
   })
 
   it('should be inactive without subscriber', () => {
@@ -140,6 +201,16 @@ describe('Store', () => {
     store.getProperty().onValue()
     getActionStream().push({})
     chai.expect(logReduce.calledOnce).to.be.true
+  })
+
+  it('should be inactive or active independently', () => {
+    const logReduce = sinon.stub()
+    const store = createStore(R.prop('id'), createPluggable(logReduce))
+    store.getProperty({ id: 1 })
+    store.getProperty({ id: 2 }).onValue()
+    getActionStream().push({})
+    chai.expect(logReduce.calledOnce).to.be.true
+    chai.expect(logReduce.lastCall.args[0]).to.have.property('name', 2)
   })
 
   it('should receive action to reduce', () => {

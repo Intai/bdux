@@ -9,7 +9,7 @@ const getDisplayName = (Component) => (
 
 const subscribe = R.curry((component, store, name) => (
   // subscribe to a store.
-  store.getProperty().onValue((state) => {
+  store.getProperty(component.props).onValue((state) => {
     // pass its state to the react component.
     component.setState({
       // under the name specified.
@@ -18,13 +18,14 @@ const subscribe = R.curry((component, store, name) => (
   })
 ))
 
-const getProperties = R.map(
-  R.invoker(0, 'getProperty')
-)
+const getProperties = R.uncurryN(2, (component) => R.map(
+  R.invoker(1, 'getProperty')(component.props)
+))
 
-const triggerCallbacks = (stores, callbacks) => (
+const triggerCallbacks = (component, stores, callbacks) => (
   Bacon.combineTemplate(
-    getProperties(stores)
+    R.assoc('props', component.props,
+      getProperties(component, stores))
   )
   .first()
   .map(R.of)
@@ -41,6 +42,10 @@ const pipeFuncs = R.ifElse(
   R.apply(R.pipe),
   R.always(R.F)
 )
+
+const removeStores = R.uncurryN(2, (component) => R.forEachObjIndexed((store) => {
+  store.removeProperty(component.props)
+}))
 
 export const createComponent = (Component, stores = {}, ...callbacks) => (
   class extends React.Component {
@@ -66,11 +71,12 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
       )
 
       // trigger callbacks after subscribing to stores.
-      triggerCallbacks(stores, callbacks)
+      triggerCallbacks(this, stores, callbacks)
     }
 
     componentWillUnmount() {
       this.dispose()
+      removeStores(this, stores)
     }
 
     render() {

@@ -92,6 +92,21 @@ describe('Component', () => {
     chai.expect(logReduce.calledOnce).to.be.true
   })
 
+  it('should subscribe to a store by props', () => {
+    sandbox.stub(Common, 'isOnServer')
+      .returns(false)
+
+    const logReduce = sinon.stub()
+    const Test = createComponent(R.F, {
+      test: createStore(R.prop('id'), createPluggable(logReduce))
+    })
+
+    shallow(<Test id="1" />)
+    shallow(<Test id="2" />)
+    getActionStream().push({})
+    chai.expect(logReduce.calledTwice).to.be.true
+  })
+
   it('should unsubscribe from a store', () => {
     sandbox.stub(Common, 'isOnServer')
       .returns(true)
@@ -104,6 +119,59 @@ describe('Component', () => {
     shallow(<Test />)
     getActionStream().push({})
     chai.expect(logReduce.called).to.be.false
+  })
+
+  it('should unsubscribe from a store by props', () => {
+    sandbox.stub(Common, 'isOnServer')
+      .returns(false)
+
+    const logReduce = sinon.stub()
+    const Test = createComponent(R.F, {
+      test: createStore(R.prop('id'), createPluggable(logReduce))
+    })
+
+    shallow(<Test id="1" />).unmount()
+    shallow(<Test id="2" />).unmount()
+    getActionStream().push({})
+    chai.expect(logReduce.called).to.be.false
+  })
+
+  it('should remove store by props on unmount', () => {
+    const getInstance = props => ({
+      name: props.id,
+      isRemovable: true
+    })
+
+    const logReduce = sinon.stub()
+    const store = createStore(getInstance, createPluggable(logReduce))
+    const Test = createComponent(R.F, {
+      test: store
+    })
+
+    const wrapper = shallow(<Test id="1" />)
+    const props = wrapper.props()
+    const property1 = store.getProperty(props)
+    wrapper.unmount()
+    const property2 = store.getProperty(props)
+    chai.expect(property1).to.not.equal(property2)
+  })
+
+  it('should not remove store by props on unmount', () => {
+    const getInstance = props => ({
+      name: props.id,
+      isRemovable: false
+    })
+
+    const logReduce = sinon.stub()
+    const store = createStore(getInstance, createPluggable(logReduce))
+    const Test = createComponent(R.F, {
+      test: store
+    })
+
+    const property1 = store.getProperty({ id: 1 })
+    shallow(<Test id="1" />).unmount()
+    const property2 = store.getProperty({ id: 1 })
+    chai.expect(property1).to.equal(property2)
   })
 
   it('should trigger a single callback after subscription', () => {
