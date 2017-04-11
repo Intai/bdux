@@ -1,8 +1,7 @@
-'use strict';
+/* eslint-env node */
 
 var gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
-    babel = require('babel-core/register'),
     spawn = require('child_process').spawn,
     srcFiles = './src/**/!(*.spec).js',
     testFiles = './src/**/*.spec.js';
@@ -26,9 +25,15 @@ gulp.task('cover', function(cb) {
   cmd.on('close', cb);
 });
 
-gulp.task('test', function() {
-  return gulp.src(testFiles, { read: false })
-    .pipe($.mocha());
+gulp.task('test', function(cb) {
+  var cmd = spawn('node', [
+    'node_modules/mocha/bin/mocha',
+    '--opts', '.mocha.opts'
+  ], {
+    stdio: 'inherit'
+  });
+
+  cmd.on('close', cb);
 });
 
 gulp.task('lint', function () {
