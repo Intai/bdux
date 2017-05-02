@@ -112,7 +112,7 @@ const getOutputStream = (reducerStream) => (
 );
 
 export const getReducer = () => {
-  let reducerStream = new Bacon.Bus();
+  const reducerStream = new Bacon.Bus();
 
   return {
     input: reducerStream,
@@ -123,6 +123,23 @@ export const getReducer = () => {
 export default createStore(
   StoreNames.DIALOG, getReducer
 );
+```
+
+Dealing with a collection of data is a common and repetitive theme for store. Creating a separate store for the items in the collection can be a great tool for the scenario. Simply construct the store names dynamically from `props` for individual items.
+
+Example of constrcuting store names:
+```
+const getInstance = (props) => ({
+  name: `${StoreNames.PRODUCT}_${props.productId}`,
+
+  // mark the store instance as removable
+  // to be removed on component unmount.
+  isRemovable: true
+})
+
+export default createStore(
+  getInstance, getReducer
+)
 ```
 
 ## Component
@@ -179,7 +196,7 @@ const logPostReduce = ({ nextState }) => {
 };
 
 export const getPreReduce = () => {
-  let preStream = new Bacon.Bus();
+  const preStream = new Bacon.Bus();
 
   return {
     input: preStream,
@@ -189,7 +206,7 @@ export const getPreReduce = () => {
 };
 
 export const getPostReduce = () => {
-  let postStream = new Bacon.Bus();
+  const postStream = new Bacon.Bus();
 
   return {
     input: postStream,
