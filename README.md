@@ -159,9 +159,10 @@ CountDownAction.countdown);
 ```
 
 ## Middleware
-Middleware exports `getPreReduce` and `getPostReduce` optionally.
+Middleware exports `getPreReduce`, `getPostReduce` and `decorateComponent` optionally.
 - `getPreReduce` returns a `Pluggable` stream to be applied before all reducers.
 - `getPostReduce` returns a `Pluggable` stream to be applied after reducers.
+- `decorateComponent` decorates all components created by `createComponent`.
 
 Example of a middleware:
 ``` javascript
@@ -217,6 +218,7 @@ applyMiddleware(
 - [Universal](https://github.com/Intai/bdux-examples/tree/master/universal)
 - [Async](https://github.com/Intai/bdux-examples/tree/master/async)
 - [Native](https://github.com/Intai/bdux-examples/tree/master/native)
+- [Infinite Scroll](https://github.com/Intai/bdux-examples/tree/master/infinite-scroll)
 
 ## License
 [The ISC License](./LICENSE.md)
