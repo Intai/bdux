@@ -57,7 +57,9 @@ export default bindToDispatch({
 
 ## Store
 Store is created using `createStore(name, getReducer, otherStores = {})`.
-- `name` is a unique store name.
+- `name` specifies a unique store name, which can be:
+  - a string.
+  - a function `props => ({ name })`.
 - `getReducer` returns a reducer as `Pluggable` which is an object contains the input and output of a stream.
 - `otherStores` is an object of dependent stores.
 
