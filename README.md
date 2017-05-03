@@ -128,7 +128,7 @@ export default createStore(
 Dealing with a collection of data is a common and repetitive theme for store. Creating a separate store for the items in the collection can be a great tool for the scenario. Simply construct the store names dynamically from `props` for individual items.
 
 Example of constrcuting store names:
-```
+``` javascript
 const getInstance = (props) => ({
   name: `${StoreNames.PRODUCT}_${props.productId}`,
 
