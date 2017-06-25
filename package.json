@@ -1,6 +1,6 @@
 {
   "name": "bdux",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "description": "A Flux implementation",
   "main": "lib/main.js",
   "scripts": {
