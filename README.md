@@ -13,7 +13,7 @@ A [Flux](https://github.com/facebook/flux/) architecture implementation out of e
 
 ## Installation
 To install as an [npm](https://www.npmjs.com/) package:
-```
+```sh
 npm install --save bdux
 ```
 
@@ -26,7 +26,7 @@ Action creator returns:
 Then `bindToDispatch` binds a single action creator or an object of action creators to dispatch actions to stores.
 
 Example of action creators:
-``` javascript
+```javascript
 import ActionTypes from './action-types';
 import { bindToDispatch } from 'bdux';
 
@@ -72,7 +72,7 @@ Reducer stream:
 Have intermediate states and side effects in action creators instead. So time travelling can be achieved, and there is a single point to monitor all actions which could cause state changes. Store can dispatch actions which will be queued to cause state changes in other stores.
 
 Example of a store:
-``` javascript
+```javascript
 import R from 'ramda';
 import Bacon from 'baconjs';
 import ActionTypes from '../actions/action-types';
@@ -128,7 +128,7 @@ export default createStore(
 Dealing with a collection of data is a common and repetitive theme for store. Creating a separate store for the items in the collection can be a great tool for the scenario. Simply construct the store names dynamically from `props` for individual items.
 
 Example of constrcuting store names:
-``` javascript
+```javascript
 const getInstance = (props) => ({
   name: `${StoreNames.PRODUCT}_${props.productId}`,
 
@@ -149,7 +149,7 @@ Component with dependent stores can be created using `createComponent(Componenet
 - `callbacks` are functions to be triggered after subscribing to stores.
 
 Example of a component:
-``` javascript
+```javascript
 import R from 'ramda';
 import React from 'react';
 import CountDownAction from '../actions/countdown-action';
@@ -184,7 +184,7 @@ Middleware exports `getPreReduce`, `getPostReduce` and `decorateComponent` optio
 - `decorateComponent` decorates all components created by `createComponent`.
 
 Example of a middleware:
-``` javascript
+```javascript
 import Bacon from 'baconjs';
 
 const logPreReduce = ({ action }) => {
@@ -220,7 +220,7 @@ export const getPostReduce = () => {
 Middleware should be configured before importing any store.
 
 Example of applying middlewares:
-``` javascript
+```javascript
 import * as Logger from 'bdux-logger';
 import * as Timetravel from 'bdux-timetravel';
 import { applyMiddleware } from 'bdux';
