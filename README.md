@@ -9,6 +9,7 @@ A [Flux](https://github.com/facebook/flux/) architecture implementation out of e
 ## Want to achieve
 - Reactive all the way from action to React component.
 - Redux time travel through middleware and reducer.
+- Only activate reducer when there is a subscriber.
 - Utilise stateless functional React component.
 
 ## Installation
