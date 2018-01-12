@@ -5,7 +5,7 @@ instrumentation:
         - .js
     default-excludes: true
     excludes:
-      - src/main.js
+      - src/index.js
     variable: __coverage__
     compact: true
     preserve-comments: false

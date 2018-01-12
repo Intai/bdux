@@ -89,13 +89,13 @@ describe('Component', () => {
   it('should render a div', () => {
     const Test = createComponent(() => (<div />))
     const wrapper = render(<Test />)
-    chai.expect(wrapper.find('div')).to.have.length(1)
+    chai.expect(wrapper.is('div')).to.be.true
   })
 
   it('should proxy props to the underlying component', () => {
     const Test = createComponent(({ className }) => (<div className={ className } />))
     const wrapper = render(<Test className={ 'test' } />)
-    chai.expect(wrapper.find('div.test')).to.have.length(1)
+    chai.expect(wrapper.is('div.test')).to.be.true
   })
 
   it('should subscribe to a store', () => {
