@@ -32,6 +32,14 @@ describe('Dispatcher', () => {
     chai.expect(callback.called).to.be.false
   })
 
+  it('should handle falsy action', () => {
+    const callback = sinon.stub()
+    getActionStream().onValue(callback)
+    bindToDispatch(() => null)()
+
+    chai.expect(callback.called).to.be.false
+  })
+
   it('should bind a single action creator', () => {
     const callback = sinon.stub()
     getActionStream().onValue(callback)

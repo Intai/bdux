@@ -31,13 +31,13 @@ const pushAction = (action) => {
   }
 }
 
-const dispatchAction = R.ifElse(
-  R.is(Bacon.Observable),
+const dispatchAction = R.cond([
+  [R.not, R.identity],
   // plug an observable to flow actions through the dispatcher.
-  R.tap(plugObservable),
+  [R.is(Bacon.Observable), R.tap(plugObservable)],
   // push a single action through the dispatcher.
-  R.tap(pushAction)
-)
+  [R.T, R.tap(pushAction)]
+])
 
 const wrapActionCreator = (creator) => R.pipe(
   // call the action creator.
