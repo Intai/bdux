@@ -9,6 +9,12 @@ import {
 
 describe('Dispatcher', () => {
 
+  let clock
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers(Date.now())
+  })
+
   it('should return an action stream', () => {
     const stream = getActionStream()
     chai.expect(stream).to.be.instanceof(Bacon.Observable)
@@ -78,6 +84,7 @@ describe('Dispatcher', () => {
     getActionStream().onValue(callback)
     bindToDispatch(() => Bacon.once({ type: 'test' }))()
 
+    clock.tick(1)
     chai.expect(callback.calledOnce).to.be.true
     chai.expect(callback.lastCall.args[0]).to.include({
       type: 'test'
@@ -91,6 +98,7 @@ describe('Dispatcher', () => {
       { type: 'test' },
       { type: 'pass' } ]))()
 
+    clock.tick(1)
     chai.expect(callback.calledTwice).to.be.true
     chai.expect(callback.lastCall.args[0]).to.include({
       type: 'pass'
@@ -107,6 +115,7 @@ describe('Dispatcher', () => {
     getActionStream().onValue(callback)
     actions.pass()
 
+    clock.tick(1)
     chai.expect(callback.calledOnce).to.be.true
     chai.expect(callback.lastCall.args[0]).to.include({
       type: 'pass'
@@ -125,10 +134,15 @@ describe('Dispatcher', () => {
     getActionStream().onValue(callback)
     actions.test()
 
+    clock.tick(1)
     chai.expect(callback.calledTwice).to.be.true
     chai.expect(callback.lastCall.args[0]).to.include({
       type: 'pass'
     })
+  })
+
+  afterEach(() => {
+    clock.restore()
   })
 
 })

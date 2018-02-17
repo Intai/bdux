@@ -189,6 +189,7 @@ describe('Store', () => {
     const store = createStore('name', createPluggable(logReduce))
     store.getProperty().onValue()
     getActionStream().plug(Bacon.fromArray(R.repeat({}, 3)))
+    clock.tick(1)
     chai.expect(logReduce.calledThrice).to.be.true
   })
 
@@ -231,6 +232,7 @@ describe('Store', () => {
 
     store.getProperty().onValue()
     getActionStream().plug(Bacon.fromArray(R.repeat({}, 2)))
+    clock.tick(1)
     chai.expect(logReduce.calledTwice).to.be.true
     chai.expect(logReduce.lastCall.args[0]).to.have.property('other')
       .and.to.equal('test')
@@ -244,14 +246,14 @@ describe('Store', () => {
         input: stream,
         output: stream
           .doAction(logReduce)
-          .delay(1)
+          .delay(2)
       }
     })
 
     store.getProperty().onValue()
     getActionStream().plug(Bacon.fromArray(R.repeat({}, 3)))
+    clock.tick(1)
     chai.expect(logReduce.calledOnce).to.be.true
-
     clock.tick(1)
     chai.expect(logReduce.calledTwice).to.be.true
   })
