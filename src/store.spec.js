@@ -283,7 +283,7 @@ describe('Store', () => {
     const store = createStore('name', createPluggable())
     store.getProperty().onValue()
     chai.expect(callback.calledOnce).to.be.true
-    chai.expect(callback.lastCall.args[0]).to.equal('previous')
+    chai.expect(callback.lastCall.args).to.eql(['name', 'previous'])
   })
 
   it('should reduce against store default value', () => {

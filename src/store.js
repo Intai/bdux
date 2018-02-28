@@ -49,8 +49,17 @@ const plugPreReducerPost = (name, getReducer, reducerArgs) => (
   .map(R.prop('nextState'))
 )
 
-const getDefaultValue = () => {
-  const getters = defaultValues.get()
+const partialStoreName = R.pipe(
+  R.of,
+  R.flip(R.partial)
+)
+
+const getDefaultValue = (name) => {
+  const getters = R.map(
+    partialStoreName(name),
+    defaultValues.get()
+  )
+
   return (getters.length > 0)
     ? R.pipe(...getters)(null)
     : null
@@ -113,7 +122,7 @@ const getFirstActionInQueue = R.pipe(
 const createStoreInstance = R.curry((getReducer, otherStores, name) => {
   // store properties.
   let storeStream = new Bacon.Bus(),
-      defaultValue = getDefaultValue(),
+      defaultValue = getDefaultValue(name),
       storeProperty = storeStream.toProperty(defaultValue),
       otherProperties = getStoreProperties(otherStores)
 
