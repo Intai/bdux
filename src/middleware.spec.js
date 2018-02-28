@@ -17,6 +17,10 @@ describe('middleware', () => {
     getPostReduce: R.F
   })
 
+  const createDefaultValue = () => ({
+    getDefaultValue: R.F
+  })
+
   const createDecorator = () => ({
     decorateComponent: R.F
   })
@@ -24,6 +28,7 @@ describe('middleware', () => {
   const createAll = () => R.mergeAll([
     createPreReduce(),
     createPostReduce(),
+    createDefaultValue(),
     createDecorator()
   ])
 
@@ -34,6 +39,7 @@ describe('middleware', () => {
     chai.expect(getMiddlewares()).to.eql({
       preReduces: [pre.getPreReduce],
       postReduces: [],
+      defaultValues: [],
       decorators: []
     })
   })
@@ -45,6 +51,19 @@ describe('middleware', () => {
     chai.expect(getMiddlewares()).to.eql({
       preReduces: [],
       postReduces: [post.getPostReduce],
+      defaultValues: [],
+      decorators: []
+    })
+  })
+
+  it('should apply a single middleware for default value', () => {
+    const middleware = createDefaultValue()
+    clearMiddlewares()
+    applyMiddleware(middleware)
+    chai.expect(getMiddlewares()).to.eql({
+      preReduces: [],
+      postReduces: [],
+      defaultValues: [middleware.getDefaultValue],
       decorators: []
     })
   })
@@ -56,6 +75,7 @@ describe('middleware', () => {
     chai.expect(getMiddlewares()).to.eql({
       preReduces: [],
       postReduces: [],
+      defaultValues: [],
       decorators: [decorator.decorateComponent]
     })
   })
@@ -67,6 +87,7 @@ describe('middleware', () => {
     chai.expect(getMiddlewares()).to.eql({
       preReduces: [all.getPreReduce],
       postReduces: [all.getPostReduce],
+      defaultValues: [all.getDefaultValue],
       decorators: [all.decorateComponent]
     })
   })
@@ -79,6 +100,7 @@ describe('middleware', () => {
     chai.expect(getMiddlewares()).to.eql({
       preReduces: [pre.getPreReduce],
       postReduces: [post.getPostReduce],
+      defaultValues: [],
       decorators: []
     })
   })
@@ -91,6 +113,7 @@ describe('middleware', () => {
     chai.expect(getMiddlewares()).to.eql({
       preReduces: [pre.getPreReduce, all.getPreReduce],
       postReduces: [all.getPostReduce],
+      defaultValues: [all.getDefaultValue],
       decorators: [all.decorateComponent]
     })
   })
@@ -102,6 +125,7 @@ describe('middleware', () => {
     chai.expect(getMiddlewares()).to.eql({
       preReduces: [],
       postReduces: [],
+      defaultValues: [],
       decorators: []
     })
   })

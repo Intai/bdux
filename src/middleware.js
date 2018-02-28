@@ -39,6 +39,11 @@ export const postReduces = createCollection(
   appendMiddleware('getPostReduce')
 )
 
+// store default values.
+export const defaultValues = createCollection(
+  appendMiddleware('getDefaultValue')
+)
+
 // react component decorators.
 export const decorators = createCollection(
   appendMiddleware('decorateComponent')
@@ -49,6 +54,7 @@ export const applyMiddleware = (...args) => {
   R.forEach(R.juxt([
     preReduces.append,
     postReduces.append,
+    defaultValues.append,
     decorators.append
   ]), args)
 }
@@ -56,11 +62,13 @@ export const applyMiddleware = (...args) => {
 export const clearMiddlewares = R.juxt([
   preReduces.clear,
   postReduces.clear,
+  defaultValues.clear,
   decorators.clear
 ])
 
 export const getMiddlewares = () => R.clone({
   preReduces: preReduces.get(),
   postReduces: postReduces.get(),
+  defaultValues: defaultValues.get(),
   decorators: decorators.get()
 })

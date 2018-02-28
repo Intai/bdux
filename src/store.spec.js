@@ -32,6 +32,10 @@ const createLogger = (logPre, logPost) => R.merge(
   createPostLogger(logPost)
 )
 
+const createDefaultValue = (value) => ({
+  getDefaultValue: R.always(value)
+})
+
 describe('Store', () => {
 
   let sandbox, clock
@@ -256,6 +260,48 @@ describe('Store', () => {
     chai.expect(logReduce.calledOnce).to.be.true
     clock.tick(1)
     chai.expect(logReduce.calledTwice).to.be.true
+  })
+
+  it('should set store defualt value from middleware', () => {
+    clearMiddlewares()
+    applyMiddleware(createDefaultValue('middleware'))
+
+    const callback = sinon.stub()
+    const store = createStore('name', createPluggable())
+    store.getProperty().onValue(callback)
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.equal('middleware')
+  })
+
+  it('should pass store default value to the next middleware', () => {
+    const callback = sinon.stub()
+    clearMiddlewares()
+    applyMiddleware(
+      createDefaultValue('previous'),
+      { getDefaultValue: callback })
+
+    const store = createStore('name', createPluggable())
+    store.getProperty().onValue()
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.equal('previous')
+  })
+
+  it('should reduce against store default value', () => {
+    const logPre = sinon.stub()
+    clearMiddlewares()
+    applyMiddleware(
+      createDefaultValue('middleware'),
+      createPreLogger(logPre))
+
+    const store = createStore('name', createPluggable())
+    store.getProperty().onValue()
+    getActionStream().push({})
+    chai.expect(logPre.calledOnce).to.be.true
+    chai.expect(logPre.lastCall.args[0]).to.eql({
+      name: 'name',
+      action: {},
+      state: 'middleware'
+    })
   })
 
   it('should pass store name to middleware pluggable before reducer', () => {

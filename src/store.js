@@ -1,7 +1,7 @@
 import R from 'ramda'
 import Bacon from 'baconjs'
 import { getActionStream } from './dispatcher'
-import { preReduces, postReduces } from './middleware'
+import { preReduces, postReduces, defaultValues } from './middleware'
 
 const STATUS_DISPATCH = 'dispatch'
 const STATUS_ONHOLD = 'onhold'
@@ -48,6 +48,13 @@ const plugPreReducerPost = (name, getReducer, reducerArgs) => (
   // get the reduced state.
   .map(R.prop('nextState'))
 )
+
+const getDefaultValue = () => {
+  const getters = defaultValues.get()
+  return (getters.length > 0)
+    ? R.pipe(...getters)(null)
+    : null
+}
 
 const getStoreProperties = R.pipe(
   R.map(R.invoker(0, 'getProperty')),
@@ -106,7 +113,8 @@ const getFirstActionInQueue = R.pipe(
 const createStoreInstance = R.curry((getReducer, otherStores, name) => {
   // store properties.
   let storeStream = new Bacon.Bus(),
-      storeProperty = storeStream.toProperty(null),
+      defaultValue = getDefaultValue(),
+      storeProperty = storeStream.toProperty(defaultValue),
       otherProperties = getStoreProperties(otherStores)
 
   const actionStream = Bacon.when(
@@ -134,7 +142,7 @@ const createStoreInstance = R.curry((getReducer, otherStores, name) => {
   // push instead of plug to avoid cyclic subscription.
   .doAction((args) => storeStream.push(args))
   // default store state.
-  .toProperty(null)
+  .toProperty(defaultValue)
 })
 
 const getPropertyExisting = (name, instances) => [
