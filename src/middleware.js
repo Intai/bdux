@@ -1,4 +1,4 @@
-import R from 'ramda'
+import * as R from 'ramda'
 
 const hasMiddlewareType = (type, middleware) => (
   middleware && R.is(Function, middleware[type])

@@ -1,4 +1,4 @@
-import R from 'ramda'
+import * as R from 'ramda'
 import Bacon from 'baconjs'
 import { getActionStream } from './dispatcher'
 import { preReduces, postReduces, defaultValues } from './middleware'

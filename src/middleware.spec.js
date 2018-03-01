@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import R from 'ramda'
+import * as R from 'ramda'
 import chai from 'chai'
 import {
   getMiddlewares,
