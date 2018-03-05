@@ -105,9 +105,10 @@ const accumAction = R.ifElse(
 
 const accumActionSeed = (getAccumSeed) => {
   let accum = getAccumSeed()
-  return (action) => (
-    accum = accumAction(accum, action)
-  )
+  return {
+    clear: () => accum = getAccumSeed(),
+    accum: action => accum = accumAction(accum, action)
+  }
 }
 
 const isActionQueueOnhold = R.propEq(
@@ -124,14 +125,16 @@ const createStoreInstance = R.curry((getReducer, otherStores, name) => {
   let storeStream = new Bacon.Bus(),
       defaultValue = getDefaultValue(name),
       storeProperty = storeStream.toProperty(defaultValue),
-      otherProperties = getStoreProperties(otherStores)
+      otherProperties = getStoreProperties(otherStores),
+      queue = accumActionSeed(getAccumSeed)
 
   const actionStream = Bacon.when(
     [getActionStream()], R.objOf('action'),
-    [storeStream], R.F
+    [storeStream], R.F,
+    [Bacon.fromBinder(() => queue.clear)], R.F
   )
   // accumulate actions into a fifo queue.
-  .map(accumActionSeed(getAccumSeed))
+  .map(queue.accum)
   // filter out when the queue is on hold.
   .filter(R.complement(isActionQueueOnhold))
   // get the first action object in queue.

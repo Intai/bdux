@@ -5,14 +5,14 @@ import Common from './utils/common-util'
 // stream actions from creators to stores.
 const actionStream = new Bacon.Bus()
 
-const generateId = (() => {
+export const generateActionId = (() => {
   let id = Common.now() * 1000
-  return () => (++id)
+  return () => ++id
 })()
 
 const mergeId = R.converge(
   R.merge, [
-    R.pipe(generateId, R.objOf('id')),
+    R.pipe(generateActionId, R.objOf('id')),
     R.identity
   ]
 )

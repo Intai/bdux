@@ -10,13 +10,16 @@ const getDisplayName = (Component) => (
 
 const subscribe = R.curry((component, store, name) => (
   // subscribe to a store.
-  store.getProperty(component.props).onValue((state) => {
-    // pass its state to the react component.
-    component.setState({
-      // under the name specified.
-      [name]: state
+  store.getProperty(component.props)
+    // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
+    .doAction(state => {
+      // pass its state to the react component.
+      component.setState({
+        // under the name specified.
+        [name]: state
+      })
     })
-  })
+    .onValue()
 ))
 
 const getProperties = R.uncurryN(2, (component) => R.map(
