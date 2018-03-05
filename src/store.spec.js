@@ -262,6 +262,35 @@ describe('Store', () => {
     chai.expect(logReduce.calledTwice).to.be.true
   })
 
+  it('should clear actions in queue after all unsubscriptions', () => {
+    const logReduce = sinon.stub()
+    const store = createStore('name', () => {
+      const stream = new Bacon.Bus()
+      return {
+        input: stream,
+        output: stream
+          .doAction(logReduce)
+          .delay(1)
+      }
+    })
+
+    const dispose = store.getProperty().onValue()
+    getActionStream().push({ type: 1 })
+    getActionStream().push({ type: 2 })
+    chai.expect(logReduce.calledOnce).to.be.true
+    chai.expect(logReduce.lastCall.args[0]).to.deep.include({
+      action: { type: 1 }
+    })
+
+    dispose()
+    store.getProperty().onValue()
+    getActionStream().push({ type: 3 })
+    chai.expect(logReduce.calledTwice).to.be.true
+    chai.expect(logReduce.lastCall.args[0]).to.deep.include({
+      action: { type: 3 }
+    })
+  })
+
   it('should set store defualt value from middleware', () => {
     clearMiddlewares()
     applyMiddleware(createDefaultValue('middleware'))

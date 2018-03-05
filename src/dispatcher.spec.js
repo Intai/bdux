@@ -5,7 +5,8 @@ import sinon from 'sinon'
 import Bacon from 'baconjs'
 import {
   bindToDispatch,
-  getActionStream } from './dispatcher'
+  getActionStream,
+  generateActionId } from './dispatcher'
 
 describe('Dispatcher', () => {
 
@@ -13,6 +14,10 @@ describe('Dispatcher', () => {
 
   beforeEach(() => {
     clock = sinon.useFakeTimers(Date.now())
+  })
+
+  it('should generate action id', () => {
+    chai.expect(generateActionId()).to.be.a('number')
   })
 
   it('should return an action stream', () => {

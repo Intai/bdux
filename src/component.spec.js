@@ -98,6 +98,22 @@ describe('Component', () => {
     chai.expect(wrapper.is('div.test')).to.be.true
   })
 
+  it('should render a store property', () => {
+    const callback = sinon.stub().returns(false)
+    const store = createStore('name', createPluggable())
+    const Test = createComponent(callback, { test: store })
+
+    store.getProperty()
+      .map(<Test />)
+      .map(shallow)
+      .map(R.invoker(0, 'html'))
+      .first()
+      .onValue()
+
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.eql({ test: null })
+  })
+
   it('should subscribe to a store', () => {
     sandbox.stub(Common, 'isOnServer')
       .returns(false)
