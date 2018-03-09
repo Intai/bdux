@@ -33,7 +33,7 @@ const triggerCallbacks = (component, stores, callbacks) => (
   )
   .first()
   .map(R.of)
-  .onValue(R.ap(callbacks))()
+  .onValue(R.ap(callbacks))
 )
 
 const hasFuncs = R.allPass([
