@@ -224,6 +224,24 @@ describe('Component', () => {
     })
   })
 
+  it('should trigger a callback from rendering a store property', () => {
+    const callback = sinon.stub()
+    const store = createStore('name', createPluggable())
+    const Test = createComponent(R.F, { test: store }, callback)
+
+    store.getProperty()
+      .map(<Test />)
+      .map(shallow)
+      .first()
+      .onValue()
+
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.eql({
+      test: null,
+      props: {}
+    })
+  })
+
   it('should trigger multiple callbacks after subscription', () => {
     const callback1 = sinon.stub()
     const callback2 = sinon.stub()
