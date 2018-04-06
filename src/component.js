@@ -13,11 +13,17 @@ const subscribe = R.curry((component, store, name) => (
   store.getProperty(component.props)
     // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
     .doAction(state => {
-      // pass its state to the react component.
-      component.setState({
+      const update = {
         // under the name specified.
         [name]: state
-      })
+      }
+
+      // pass its state update to the react component.
+      if (!component.isConstructed) {
+        component.state = update;
+      } else {
+        component.setState(update)
+      }
     })
     .onValue()
 ))
@@ -58,11 +64,18 @@ const createComponentDecorated = (Component, stores, callbacks) => (
     state = {}
 
     /* istanbul ignore next */
-    constructor() {
-      super()
+    constructor(props) {
+      super(props)
+      this.subscribeToStores()
+      this.isConstructed = true
     }
 
-    componentWillMount() {
+    componentWillUnmount() {
+      this.dispose()
+      removeStores(this, stores)
+    }
+
+    subscribeToStores() {
       // pipe all dispose functions.
       this.dispose = pipeFuncs(
         // get the array of dispose functions.
@@ -76,11 +89,6 @@ const createComponentDecorated = (Component, stores, callbacks) => (
 
       // trigger callbacks after subscribing to stores.
       triggerCallbacks(this, stores, callbacks)
-    }
-
-    componentWillUnmount() {
-      this.dispose()
-      removeStores(this, stores)
     }
 
     render() {
