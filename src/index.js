@@ -1,6 +1,7 @@
 export * from './dispatcher'
-export * from './component'
-export * from './store'
+export { default as BduxContext } from './context'
+export { createComponent } from './component'
+export { createStore } from './store'
 export {
   applyMiddleware,
   getMiddlewares,

@@ -5,9 +5,10 @@ import chai from 'chai'
 import sinon from 'sinon'
 import Bacon from 'baconjs'
 import React from 'react'
+import { JSDOM } from 'jsdom'
 import Common from './utils/common-util'
-import { render, shallow } from 'enzyme'
-import { createComponent } from './component'
+import { render, shallow, mount } from 'enzyme'
+import { decorateToSubscribeStores, createComponent } from './component'
 import { getActionStream } from './dispatcher'
 import { createStore } from './store'
 import {
@@ -28,7 +29,8 @@ const createLogger = (log) => ({
     class extends React.Component {
       static displayName = 'Logger'
 
-      componentWillMount() {
+      constructor(props) {
+        super(props)
         log()
       }
 
@@ -45,12 +47,13 @@ describe('Component', () => {
   let sandbox
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create()
+    sandbox = sinon.createSandbox()
   })
 
   it('should create a react component', () => {
     const Test = createComponent(R.F)
-    chai.expect(React.Component.isPrototypeOf(Test)).to.be.true
+    chai.expect(Test).to.be.a('function')
+    chai.expect(React.isValidElement(Test())).to.be.true
   })
 
   it('should keep the component name', () => {
@@ -74,13 +77,13 @@ describe('Component', () => {
   })
 
   it('should have no default state', () => {
-    const Test = createComponent(R.F)
+    const Test = decorateToSubscribeStores(R.F)
     const wrapper = shallow(<Test />)
     chai.expect(wrapper.state()).to.eql({})
   })
 
   it('should create dispose function', () => {
-    const Test = createComponent(R.F)
+    const Test = decorateToSubscribeStores(R.F)
     const wrapper = shallow(<Test />)
     chai.expect(wrapper.instance()).to.have.property('dispose')
       .and.is.a('function')
@@ -111,36 +114,7 @@ describe('Component', () => {
       .onValue()
 
     chai.expect(callback.calledOnce).to.be.true
-    chai.expect(callback.lastCall.args[0]).to.eql({ test: null })
-  })
-
-  it('should subscribe to a store', () => {
-    sandbox.stub(Common, 'isOnServer')
-      .returns(false)
-
-    const logReduce = sinon.stub()
-    const Test = createComponent(R.F, {
-      test: createStore('name', createPluggable(logReduce))
-    })
-
-    shallow(<Test />)
-    getActionStream().push({})
-    chai.expect(logReduce.calledOnce).to.be.true
-  })
-
-  it('should subscribe to a store by props', () => {
-    sandbox.stub(Common, 'isOnServer')
-      .returns(false)
-
-    const logReduce = sinon.stub()
-    const Test = createComponent(R.F, {
-      test: createStore(R.prop('id'), createPluggable(logReduce))
-    })
-
-    shallow(<Test id="1" />)
-    shallow(<Test id="2" />)
-    getActionStream().push({})
-    chai.expect(logReduce.calledTwice).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.include({ test: null })
   })
 
   it('should unsubscribe from a store', () => {
@@ -172,105 +146,147 @@ describe('Component', () => {
     chai.expect(logReduce.called).to.be.false
   })
 
-  it('should remove store by props on unmount', () => {
-    const getInstance = props => ({
-      name: props.id,
-      isRemovable: true
-    })
-
-    const logReduce = sinon.stub()
-    const store = createStore(getInstance, createPluggable(logReduce))
-    const Test = createComponent(R.F, {
-      test: store
-    })
-
-    const wrapper = shallow(<Test id="1" />)
-    const props = wrapper.props()
-    const property1 = store.getProperty(props)
-    wrapper.unmount()
-    const property2 = store.getProperty(props)
-    chai.expect(property1).to.not.equal(property2)
-  })
-
-  it('should not remove store by props on unmount', () => {
-    const getInstance = props => ({
-      name: props.id,
-      isRemovable: false
-    })
-
-    const logReduce = sinon.stub()
-    const store = createStore(getInstance, createPluggable(logReduce))
-    const Test = createComponent(R.F, {
-      test: store
-    })
-
-    const property1 = store.getProperty({ id: 1 })
-    shallow(<Test id="1" />).unmount()
-    const property2 = store.getProperty({ id: 1 })
-    chai.expect(property1).to.equal(property2)
-  })
-
-  it('should trigger a single callback after subscription', () => {
-    const callback = sinon.stub()
-    const Test = createComponent(R.F, {
-      test: createStore('name', createPluggable())
-    }, callback)
-
-    shallow(<Test />)
-    chai.expect(callback.calledOnce).to.be.true
-    chai.expect(callback.lastCall.args[0]).to.eql({
-      test: null,
-      props: {}
-    })
-  })
-
-  it('should trigger a callback from rendering a store property', () => {
-    const callback = sinon.stub()
-    const store = createStore('name', createPluggable())
-    const Test = createComponent(R.F, { test: store }, callback)
-
-    store.getProperty()
-      .map(<Test />)
-      .map(shallow)
-      .first()
-      .onValue()
-
-    chai.expect(callback.calledOnce).to.be.true
-    chai.expect(callback.lastCall.args[0]).to.eql({
-      test: null,
-      props: {}
-    })
-  })
-
-  it('should trigger multiple callbacks after subscription', () => {
-    const callback1 = sinon.stub()
-    const callback2 = sinon.stub()
-    const Test = createComponent(R.F, {
-      test: createStore('name', createPluggable())
-    },
-    callback1,
-    callback2)
-
-    shallow(<Test />)
-    chai.expect(callback1.calledOnce).to.be.true
-    chai.expect(callback2.calledOnce).to.be.true
-    chai.expect(callback2.lastCall.args[0]).to.eql({
-      test: null,
-      props: {}
-    })
-  })
-
   it('should be decorated by middleware', () => {
     const logMount = sinon.stub()
     const logger = createLogger(logMount)
     clearMiddlewares()
     applyMiddleware(logger)
 
-    const Test = createComponent(() => <div />)
+    const Test = () => (
+      React.createElement(
+        createComponent(() => <div />)
+      )
+    )
+
     const wrapper = shallow(<Test />)
     chai.expect(wrapper.name()).to.equal('Logger')
     chai.expect(wrapper.html()).to.equal('<div></div>')
     chai.expect(logMount.calledOnce).to.be.true
+  })
+
+  describe('with jsdom', () => {
+
+    beforeEach(() => {
+      const dom = new JSDOM('<html></html>')
+      global.window = dom.window
+      global.document = dom.window.document
+      global.Element = dom.window.Element
+    })
+
+    it('should subscribe to a store', () => {
+      sandbox.stub(Common, 'isOnServer')
+        .returns(false)
+
+      const logReduce = sinon.stub()
+      const Test = createComponent(R.F, {
+        test: createStore('name', createPluggable(logReduce))
+      })
+
+      mount(<Test />)
+      getActionStream().push({})
+      chai.expect(logReduce.calledOnce).to.be.true
+    })
+
+    it('should subscribe to a store by props', () => {
+      sandbox.stub(Common, 'isOnServer')
+        .returns(false)
+
+      const logReduce = sinon.stub()
+      const Test = createComponent(R.F, {
+        test: createStore(R.prop('id'), createPluggable(logReduce))
+      })
+
+      mount(<Test id="1" />)
+      mount(<Test id="2" />)
+      getActionStream().push({})
+      chai.expect(logReduce.calledTwice).to.be.true
+    })
+
+    it('should remove store by props on unmount', () => {
+      const getInstance = props => ({
+        name: props.id,
+        isRemovable: true
+      })
+
+      const logReduce = sinon.stub()
+      const store = createStore(getInstance, createPluggable(logReduce))
+      const Test = createComponent(R.F, {
+        test: store
+      })
+
+      const wrapper = mount(<Test id="1" />)
+      const props = wrapper.props()
+      const property1 = store.getProperty(props)
+      wrapper.unmount()
+      const property2 = store.getProperty(props)
+      chai.expect(property1 === property2).to.be.false
+    })
+
+    it('should not remove store by props on unmount', () => {
+      const getInstance = props => ({
+        name: props.id,
+        isRemovable: false
+      })
+
+      const logReduce = sinon.stub()
+      const store = createStore(getInstance, createPluggable(logReduce))
+      const Test = createComponent(R.F, {
+        test: store
+      })
+
+      const property1 = store.getProperty({ id: '2' })
+      mount(<Test id="2" />).unmount()
+      const property2 = store.getProperty({ id: '2' })
+      chai.expect(property1 === property2).to.be.true
+    })
+
+    it('should trigger a single callback after subscription', () => {
+      const callback = sinon.stub()
+      const Test = createComponent(R.F, {
+        test: createStore('name', createPluggable())
+      }, callback)
+
+      mount(<Test />)
+      chai.expect(callback.calledOnce).to.be.true
+      chai.expect(callback.lastCall.args[0])
+        .to.include({ test: null })
+        .and.have.property('props')
+    })
+
+    it('should trigger a callback from rendering a store property', () => {
+      const callback = sinon.stub()
+      const store = createStore('name', createPluggable())
+      const Test = createComponent(R.F, { test: store }, callback)
+
+      store.getProperty()
+        .map(<Test />)
+        .map(mount)
+        .first()
+        .onValue()
+
+      chai.expect(callback.calledOnce).to.be.true
+      chai.expect(callback.lastCall.args[0])
+        .to.include({ test: null })
+        .and.have.property('props')
+    })
+
+    it('should trigger multiple callbacks after subscription', () => {
+      const callback1 = sinon.stub()
+      const callback2 = sinon.stub()
+      const Test = createComponent(R.F, {
+        test: createStore('name', createPluggable())
+      },
+      callback1,
+      callback2)
+
+      mount(<Test />)
+      chai.expect(callback1.calledOnce).to.be.true
+      chai.expect(callback2.calledOnce).to.be.true
+      chai.expect(callback2.lastCall.args[0])
+        .to.include({ test: null })
+        .and.have.property('props')
+    })
+
   })
 
   afterEach(() => {

@@ -1,6 +1,6 @@
 import * as R from 'ramda'
 import Bacon from 'baconjs'
-import { getActionStream } from './dispatcher'
+import { defaultContextValue } from './context'
 import { preReduces, postReduces, defaultValues } from './middleware'
 
 const STATUS_DISPATCH = 'dispatch'
@@ -120,7 +120,7 @@ const getFirstActionInQueue = R.pipe(
   R.head
 )
 
-const createStoreInstance = R.curry((getReducer, otherStores, name) => {
+const createStoreInstance = (getReducer, otherStores) => (name, dispatcher) => {
   // store properties.
   let storeStream = new Bacon.Bus(),
       defaultValue = getDefaultValue(name),
@@ -129,7 +129,7 @@ const createStoreInstance = R.curry((getReducer, otherStores, name) => {
       queue = accumActionSeed(getAccumSeed)
 
   const actionStream = Bacon.when(
-    [getActionStream()], R.objOf('action'),
+    [dispatcher.getActionStream()], R.objOf('action'),
     [storeStream], R.F,
     [Bacon.fromBinder(() => queue.clear)], R.F
   )
@@ -155,24 +155,17 @@ const createStoreInstance = R.curry((getReducer, otherStores, name) => {
   .doAction((args) => storeStream.push(args))
   // default store state.
   .toProperty(defaultValue)
-})
+}
 
-const getPropertyExisting = (name, instances) => [
-  instances,
-  R.prop(name, instances)
-]
-
-const getPropertyCreate = (name, instances, createInstance) => {
-  const instance = createInstance(name)
-  return [
-    R.assoc(name, instance, instances),
-    instance
-  ]
+const getPropertyCreate = (name, instances, dispatcher, createInstance) => {
+  const instance = createInstance(name, dispatcher)
+  instances[name] = instance
+  return instance
 }
 
 const getPropertyInstance = R.ifElse(
   R.has,
-  getPropertyExisting,
+  R.prop,
   getPropertyCreate
 )
 
@@ -187,30 +180,59 @@ const config = R.ifElse(
   configObject
 )
 
-const getProperty = R.curry((getConfig, createInstance, props, instances) => {
-  const { name } = config(getConfig, props)
-  return getPropertyInstance(name, instances, createInstance)
-})
+const getContext = (props) => (
+  (props && props.bdux) || defaultContextValue
+)
 
-const removeProperty = R.curry((getConfig, props, instances) => {
+/*(() => {
+  let fallback
+  return (props) => {
+    if (!props || !props.bdux) {
+      return fallback
+        // fallback for backward compatibility without context.
+        || (fallback = defaultContextValue)
+    }
+    return props.bdux
+  }
+})()*/
+
+const getStoreInstances = (store, props) => {
+  const { stores } = getContext(props)
+
+  if (stores.has(store)) {
+    // existing in the context.
+    return stores.get(store)
+  } else {
+    // remember the store in the context.
+    const instances = {}
+    stores.set(store, instances)
+    return instances
+  }
+}
+
+const getProperty = (getConfig, createInstance, store) => (props) => (
+  getPropertyInstance(
+    config(getConfig, props).name,
+    getStoreInstances(store, props),
+    getContext(props).dispatcher,
+    createInstance
+  )
+)
+
+const removeProperty = (getConfig, store) => (props) => {
   const { name, isRemovable } = config(getConfig, props)
-  return [(isRemovable)
-    ? R.dissoc(name, instances)
-    : instances
-  ]
-})
-
-const memoizeStore = (funcs) => {
-  let ret, instances = {}
-  return R.map((func) => (props) => {
-    [instances, ret] = func(props, instances)
-    return ret
-  }, funcs)
+  if (isRemovable) {
+    delete getContext(props).stores.get(store)[name]
+  }
 }
 
 export const createStore = (getConfig, getReducer, otherStores = {}) => {
-  return memoizeStore({
-    getProperty: getProperty(getConfig, createStoreInstance(getReducer, otherStores)),
-    removeProperty: removeProperty(getConfig)
-  })
+  const thisStore = {}
+  // get an existing or create a new bacon property to hold the state.
+  thisStore.getProperty = getProperty(getConfig,
+    createStoreInstance(getReducer, otherStores), thisStore)
+  // remove an existing bacon property.
+  thisStore.removeProperty = removeProperty(getConfig, thisStore)
+
+  return thisStore
 }

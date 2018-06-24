@@ -2,6 +2,7 @@ import * as R from 'ramda'
 import Bacon from 'baconjs'
 import React from 'react'
 import Common from './utils/common-util'
+import BduxContext from './context'
 import { decorators } from './middleware'
 
 const getDisplayName = (Component) => (
@@ -57,7 +58,7 @@ const removeStores = R.uncurryN(2, (component) => R.forEachObjIndexed((store) =>
   store.removeProperty(component.props)
 }))
 
-const createComponentDecorated = (Component, stores, callbacks) => (
+export const decorateToSubscribeStores = (Component, stores = {}, callbacks = []) => (
   class extends React.Component {
     static displayName = getDisplayName(Component)
     static defaultProps = {}
@@ -106,13 +107,38 @@ const createComponentDecorated = (Component, stores, callbacks) => (
   }
 )
 
-const decorate = (Component) => (
+export const decorateToConsumeContext = (Component) => {
+  const decorated = (props) => (
+    <BduxContext.Consumer>
+      {(bdux) => (
+        <Component
+          {...props}
+          bdux={bdux}
+          dispatch={bdux.dispatcher.dispatchAction}
+          bindToDispatch={bdux.dispatcher.bindToDispatch}
+        />
+      )}
+    </BduxContext.Consumer>
+  )
+
+  decorated.displayName = getDisplayName(Component)
+  decorated.defaultProps = {}
+  return decorated
+}
+
+
+const decorateByMiddlewares = (Component) => (
   R.isEmpty(decorators.get())
     ? Component
     : R.apply(R.pipe, decorators.get())(Component)
 )
 
 export const createComponent = (Component, stores = {}, ...callbacks) => (
-  createComponentDecorated(
-    decorate(Component), stores, callbacks)
+  decorateToConsumeContext(
+    decorateToSubscribeStores(
+      decorateByMiddlewares(Component),
+      stores,
+      callbacks
+    )
+  )
 )
