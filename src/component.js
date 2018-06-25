@@ -47,8 +47,9 @@ const triggerCallbacks = (component, stores, callbacks) => (
       getProperties(component, stores))
   )
   .first()
-  .map(R.of)
-  .onValue(R.ap(callbacks))
+  .onValue(R.juxt(
+    getBindToDispatch(component.props.bdux)(callbacks)
+  ))
 )
 
 const hasFuncs = R.allPass([
