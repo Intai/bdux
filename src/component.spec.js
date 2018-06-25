@@ -304,6 +304,32 @@ describe('Component', () => {
         .and.have.property('props')
     })
 
+    it('should bind callbacks to dispatch', () => {
+      const callback = sinon.stub()
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+
+      const Test = createComponent(R.F, {},
+        R.always({ type: 'test' }))
+      bdux.dispatcher.getActionStream()
+        .onValue(callback)
+
+      mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      chai.expect(callback.calledOnce).to.be.true
+      chai.expect(callback.lastCall.args[0])
+        .to.include({ type: 'test' })
+        .and.have.property('id')
+    })
+
     it('should provide convenience to pipe decorators', () => {
       const callback1 = sinon.stub()
       const callback2 = sinon.stub()
@@ -369,6 +395,129 @@ describe('Component', () => {
         dispatch: bdux.dispatcher.dispatchAction,
         bindToDispatch: bdux.dispatcher.bindToDispatch
       })
+    })
+
+    it('should bind an action creator to dispatch', () => {
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+
+      const callback = sinon.stub()
+      bdux.dispatcher.getActionStream()
+        .onValue(callback)
+
+      const Test = createComponent(({ bindToDispatch }) => {
+        bindToDispatch(R.always({ type: 'render' }))()
+        return false
+      })
+
+      mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      chai.expect(callback.calledOnce).to.be.true
+      chai.expect(callback.lastCall.args[0])
+        .to.include({ type: 'render' })
+        .and.have.property('id')
+    })
+
+    it('should bind multiple action creators to dispatch', () => {
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+
+      const callback = sinon.stub()
+      bdux.dispatcher.getActionStream()
+        .onValue(callback)
+
+      const Test = createComponent(({ bindToDispatch }) => {
+        const creators = bindToDispatch({
+          test1: R.always({ type: 'test1' }),
+          test2: R.always({ type: 'test2' })
+        })
+        creators.test1()
+        creators.test2()
+        return false
+      })
+
+      mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      chai.expect(callback.calledTwice).to.be.true
+      chai.expect(callback.firstCall.args[0]).to.have.property('type', 'test1')
+      chai.expect(callback.lastCall.args[0]).to.have.property('type', 'test2')
+    })
+
+    it('should dispatch a single action', () => {
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+
+      const callback = sinon.stub()
+      bdux.dispatcher.getActionStream()
+        .onValue(callback)
+
+      const Test = createComponent(({ dispatch }) => {
+        dispatch({ type: 'test' })
+        return false
+      })
+
+      mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      chai.expect(callback.calledOnce).to.be.true
+      chai.expect(callback.lastCall.args[0]).to.have.property('type', 'test')
+    })
+
+    it('should dispatch actions from a bacon stream', () => {
+      const clock = sinon.useFakeTimers(Date.now())
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+
+      const callback = sinon.stub()
+      bdux.dispatcher.getActionStream()
+        .onValue(callback)
+
+      const Test = createComponent(({ dispatch }) => {
+        dispatch(Bacon.fromArray([
+          { type: 'event1' },
+          { type: 'event2' }
+        ]))
+        return false
+      })
+
+      mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      clock.tick(1)
+      chai.expect(callback.calledTwice).to.be.true
+      chai.expect(callback.firstCall.args[0]).to.have.property('type', 'event1')
+      chai.expect(callback.lastCall.args[0]).to.have.property('type', 'event2')
+      clock.restore()
     })
 
   })
