@@ -184,18 +184,6 @@ const getContext = (props) => (
   (props && props.bdux) || defaultContextValue
 )
 
-/*(() => {
-  let fallback
-  return (props) => {
-    if (!props || !props.bdux) {
-      return fallback
-        // fallback for backward compatibility without context.
-        || (fallback = defaultContextValue)
-    }
-    return props.bdux
-  }
-})()*/
-
 const getStoreInstances = (store, props) => {
   const { stores } = getContext(props)
 
@@ -222,7 +210,7 @@ const getProperty = (getConfig, createInstance, store) => (props) => (
 const removeProperty = (getConfig, store) => (props) => {
   const { name, isRemovable } = config(getConfig, props)
   if (isRemovable) {
-    delete getContext(props).stores.get(store)[name]
+    delete getStoreInstances(store, props)[name]
   }
 }
 

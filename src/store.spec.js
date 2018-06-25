@@ -4,7 +4,7 @@ import * as R from 'ramda'
 import chai from 'chai'
 import sinon from 'sinon'
 import Bacon from 'baconjs'
-import { getActionStream } from './dispatcher'
+import { createDispatcher, getActionStream } from './dispatcher'
 import { createStore } from './store'
 import {
   clearMiddlewares,
@@ -70,6 +70,17 @@ describe('Store', () => {
     chai.expect(property1).to.not.equal(property2)
   })
 
+  it('should get different store property instances in different contexts', () => {
+    const store = createStore(R.prop('id'), createPluggable())
+    const property1 = store.getProperty({ id: 1 })
+    const property2 = store.getProperty({ id: 1, bdux: {
+      dispatcher: createDispatcher(),
+      stores: new WeakMap()
+    }})
+
+    chai.expect(property1 === property2).to.be.false
+  })
+
   it('should remove a store property instance of props', () => {
     const getInstance = props => ({
       name: props.id,
@@ -94,6 +105,23 @@ describe('Store', () => {
     store.removeProperty({ id: 1 })
     const property2 = store.getProperty({ id: 1 })
     chai.expect(property1).to.equal(property2)
+  })
+
+  it('should remove a store property instance within a context', () => {
+    const getInstance = props => ({
+      name: props.id,
+      isRemovable: true
+    })
+
+    const store = createStore(getInstance, createPluggable())
+    const property1 = store.getProperty({ id: 1 })
+    store.removeProperty({ id: 1, bdux: {
+      dispatcher: createDispatcher(),
+      stores: new WeakMap()
+    }})
+
+    const property2 = store.getProperty({ id: 1 })
+    chai.expect(property1 === property2).to.be.true
   })
 
   it('should create a store property which is a bacon observable', () => {

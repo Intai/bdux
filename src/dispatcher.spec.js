@@ -4,6 +4,7 @@ import chai from 'chai'
 import sinon from 'sinon'
 import Bacon from 'baconjs'
 import {
+  createDispatcher,
   bindToDispatch,
   getActionStream,
   generateActionId } from './dispatcher'
@@ -14,6 +15,24 @@ describe('Dispatcher', () => {
 
   beforeEach(() => {
     clock = sinon.useFakeTimers(Date.now())
+  })
+
+  it('should create dispatchers', () => {
+    const dispatcher1 = createDispatcher()
+    const dispatcher2 = createDispatcher()
+    const stream1 = dispatcher1.getActionStream()
+    const stream2 = dispatcher2.getActionStream()
+
+    chai.expect(stream1 === stream2).to.be.false
+  })
+
+  it('should create independent dispatchers', () => {
+    const dispatcher1 = createDispatcher()
+    const dispatcher2 = createDispatcher()
+    const id1 = dispatcher1.generateActionId()
+    const id2 = dispatcher2.generateActionId()
+
+    chai.expect(id1 === id2).to.be.true
   })
 
   it('should generate action id', () => {

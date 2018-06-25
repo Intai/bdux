@@ -6,10 +6,11 @@ import sinon from 'sinon'
 import Bacon from 'baconjs'
 import React from 'react'
 import { JSDOM } from 'jsdom'
+import BduxContext from './context'
 import Common from './utils/common-util'
 import { render, shallow, mount } from 'enzyme'
 import { decorateToSubscribeStores, createComponent } from './component'
-import { getActionStream } from './dispatcher'
+import { createDispatcher, getActionStream } from './dispatcher'
 import { createStore } from './store'
 import {
   clearMiddlewares,
@@ -56,6 +57,17 @@ describe('Component', () => {
     chai.expect(React.isValidElement(Test())).to.be.true
   })
 
+  it('should create a react component without stores and callbacks', () => {
+    const Test = createComponent()(R.F)
+    chai.expect(Test).to.be.a('function')
+    chai.expect(React.isValidElement(Test())).to.be.true
+  })
+
+  it('should decorate to stores with a react component', () => {
+    const Test = decorateToSubscribeStores(R.F)
+    chai.expect(React.Component.isPrototypeOf(Test)).to.be.true
+  })
+
   it('should keep the component name', () => {
     const Test = createComponent(class Test extends React.Component {})
     chai.expect(Test.displayName).to.equal('Test')
@@ -73,6 +85,11 @@ describe('Component', () => {
 
   it('should have no default props', () => {
     const Test = createComponent(R.F)
+    chai.expect(Test.defaultProps).to.eql({})
+  })
+
+  it('should decorate to stores without default props', () => {
+    const Test = decorateToSubscribeStores(R.F)
     chai.expect(Test.defaultProps).to.eql({})
   })
 
@@ -285,6 +302,73 @@ describe('Component', () => {
       chai.expect(callback2.lastCall.args[0])
         .to.include({ test: null })
         .and.have.property('props')
+    })
+
+    it('should provide convenience to pipe decorators', () => {
+      const callback1 = sinon.stub()
+      const callback2 = sinon.stub()
+      const decorate = createComponent(
+        { test: createStore('name', createPluggable()) },
+        callback1,
+        callback2
+      )
+
+      const Test = decorate(R.F)
+      mount(<Test className="hidden" />)
+
+      chai.expect(callback1.calledOnce).to.be.true
+      chai.expect(callback2.calledOnce).to.be.true
+      chai.expect(callback2.lastCall.args[0])
+        .to.include({ test: null })
+        .and.have.property('props')
+        .to.include({ className: 'hidden' })
+    })
+
+    it('should receive value from context provider', () => {
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+
+      const Test = createComponent(R.F)
+      const wrapper = mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      chai.expect(wrapper.find(Test).childAt(0).props()).to.include({
+        bdux: bdux,
+        dispatch: bdux.dispatcher.dispatchAction,
+        bindToDispatch: bdux.dispatcher.bindToDispatch
+      })
+    })
+
+    it('should receive updates from context provider', () => {
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+
+      const Test = createComponent(R.F)
+      const Provider = (props) => (
+        <div>
+          <BduxContext.Provider value={props.value}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      const wrapper = mount(<Provider value={{}}/>)
+      wrapper.setProps({ value: bdux })
+
+      chai.expect(wrapper.find(Test).childAt(0).props()).to.include({
+        bdux: bdux,
+        dispatch: bdux.dispatcher.dispatchAction,
+        bindToDispatch: bdux.dispatcher.bindToDispatch
+      })
     })
 
   })

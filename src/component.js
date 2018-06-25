@@ -9,6 +9,14 @@ const getDisplayName = (Component) => (
   Component.displayName || Component.name || 'Component'
 )
 
+const getDispatch = R.pathOr(
+  R.F, ['dispatcher', 'dispatchAction']
+)
+
+const getBindToDispatch = R.pathOr(
+  R.identity, ['dispatcher', 'bindToDispatch']
+)
+
 const subscribe = R.curry((component, store, name) => (
   // subscribe to a store.
   store.getProperty(component.props)
@@ -114,8 +122,8 @@ export const decorateToConsumeContext = (Component) => {
         <Component
           {...props}
           bdux={bdux}
-          dispatch={bdux.dispatcher.dispatchAction}
-          bindToDispatch={bdux.dispatcher.bindToDispatch}
+          dispatch={getDispatch(bdux)}
+          bindToDispatch={getBindToDispatch(bdux)}
         />
       )}
     </BduxContext.Consumer>
@@ -133,7 +141,7 @@ const decorateByMiddlewares = (Component) => (
     : R.apply(R.pipe, decorators.get())(Component)
 )
 
-export const createComponent = (Component, stores = {}, ...callbacks) => (
+const createComponentImplement = (Component, stores = {}, ...callbacks) => (
   decorateToConsumeContext(
     decorateToSubscribeStores(
       decorateByMiddlewares(Component),
@@ -141,4 +149,16 @@ export const createComponent = (Component, stores = {}, ...callbacks) => (
       callbacks
     )
   )
+)
+
+const createComponentPipe = (stores = {}, ...callbacks) => (Component) => (
+  // convenient to pipe decorators.
+  createComponentImplement(Component, stores, ...callbacks)
+)
+
+export const createComponent = (...args) => (
+  // if the first argument is a react component.
+  (React.Component.isPrototypeOf(args[0]) || R.is(Function, args[0]))
+    ? createComponentImplement(...args)
+    : createComponentPipe(...args)
 )
