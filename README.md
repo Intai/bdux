@@ -11,6 +11,7 @@ A [Flux](https://github.com/facebook/flux/) architecture implementation out of e
 - Redux style time travel through middleware and reducer.
 - Only activate reducer when there is a subscriber.
 - Utilise stateless functional React component.
+- Utilise React context provider and consumer.
 
 ## Installation
 To install as an [npm](https://www.npmjs.com/) package:
@@ -24,43 +25,35 @@ Action creator returns:
 - A Bacon stream of action objects.
 - A falsy value to create no action.
 
-Then `bindToDispatch` binds a single action creator or an object of action creators to dispatch actions to stores.
-
 Example of action creators:
 ```javascript
-import ActionTypes from './action-types';
-import { bindToDispatch } from 'bdux';
+import Bacon from 'baconjs'
+import ActionTypes from './action-types'
 
 export const add = () => ({
   type: ActionTypes.ADD
-});
+})
 
 export const complete = () => (
   Bacon.once({
     type: ActionTypes.COMPLETE
   })
-);
+)
 
 export const remove = (index) => {
   if (index >= 0) {
     return {
       type: ActionTypes.REMOVE
-    };
+    }
   }
-};
-
-export default bindToDispatch({
-  add,
-  complete
-  remove
-});
+}
 ```
 
 ## Store
 Store is created using `createStore(name, getReducer, otherStores = {})`.
 - `name` specifies a unique store name, which can be:
-  - a string.
-  - a function `props => ({ name })`.
+  - A string.
+  - A function `props => ({ name })`.
 - `getReducer` returns a reducer as `Pluggable` which is an object contains the input and output of a stream.
 - `otherStores` is an object of dependent stores.
 
@@ -74,56 +67,45 @@ Have intermediate states and side effects in action creators instead. So time tr
 
 Example of a store:
 ```javascript
-import R from 'ramda';
-import Bacon from 'baconjs';
-import ActionTypes from '../actions/action-types';
-import StoreNames from '../stores/store-names';
-import { createStore } from 'bdux';
+import R from 'ramda'
+import Bacon from 'baconjs'
+import ActionTypes from '../actions/action-types'
+import StoreNames from '../stores/store-names'
+import { createStore } from 'bdux'
 
 const isAction = R.pathEq(
   ['action', 'type']
-);
-
-const mergeState = (name, getValue) => (
-  R.converge(R.mergeWith(R.merge), [
-    R.identity,
-    R.pipe(
-      getValue,
-      R.objOf(name),
-      R.objOf('state')
-    )
-  ])
-);
+)
 
 const whenCancel = R.when(
   isAction(ActionTypes.CANCEL),
-  mergeState('confirm', R.F)
-);
+  R.assocPath(['state', 'confirm'], false)
+)
 
 const whenConfirm = R.when(
   isAction(ActionTypes.CONFIRM),
-  mergeState('confirm', R.T)
-);
+  R.assocPath(['state', 'confirm'], true)
+)
 
 const getOutputStream = (reducerStream) => (
   reducerStream
     .map(whenCancel)
     .map(whenConfirm)
     .map(R.prop('state'))
-);
+)
 
 export const getReducer = () => {
-  const reducerStream = new Bacon.Bus();
+  const reducerStream = new Bacon.Bus()
 
   return {
     input: reducerStream,
     output: getOutputStream(reducerStream)
-  };
-};
+  }
+}
 
 export default createStore(
   StoreNames.DIALOG, getReducer
-);
+)
 ```
 
 Dealing with a collection of data is a common and repetitive theme for store. Creating a separate store for the items in the collection can be a great tool for the scenario. Simply construct the store names dynamically from `props` for individual items.
@@ -144,38 +126,67 @@ export default createStore(
 ```
 
 ## Component
-Component with dependent stores can be created using `createComponent(Componenet, stores = {}, ...callbacks)`.
+Component with dependent stores can be created using `createComponent(Componenet, stores = {}, ...callbacks)` or `createComponent(stores = {}, ...callbacks)(Componenet)`.
 - `Component` is a React component.
 - `stores` is an object of dependent stores.
 - `callbacks` are functions to be triggered after subscribing to stores.
 
+Additional props are passed to `Component`:
+- `dispatch` the return value of an action creator.
+- `bindToDispatch` binds a single action creator or an object of action creators to dispatch actions to stores.
+
 Example of a component:
 ```javascript
-import R from 'ramda';
-import React from 'react';
-import CountDownAction from '../actions/countdown-action';
-import CountDownStore from '../stores/countdown-store';
+import R from 'ramda'
+import React from 'react'
+import * as CountDownAction from '../actions/countdown-action'
+import CountDownStore from '../stores/countdown-store'
 import { createComponent } from 'bdux'
 
-const renderCountDown = (countdown) => (
-  <span>{ countdown }</span>
-);
+const handleDoubleClick = ({ dispatch }) => () => {
+  dispatch(CountDownAction.doubleClick())
+}
 
-const render = R.ifElse(
-  R.is(Number),
-  renderCountDown,
-  R.always(<noscript />)
-);
-
-export const CountDown = ({ countdown }) => (
-  render(countdown)
-);
+export const CountDown = (props) => (
+  R.is(Number, props.countdown) && (
+    <button
+      onClick={ props.bindToDispatch(CountDownAction.click) }
+      onDoubleClick={ handleDoubleClick(props) }
+    >
+      { props.countdown }
+    </button>
+  )
+)
 
 export default createComponent(CountDown, {
   countdown: CountDownStore
 },
 // start counting down.
-CountDownAction.countdown);
+CountDownAction.countdown)
+```
+
+Wrap the entire app in a bdux context provider optionally to avoid of using global dispatcher and stores, which is very useful for server side rendering to isolate requests.
+```javascript
+import React from 'react'
+import ReactDOM from 'react-dom'
+import { BduxContext, createDispatcher } from 'bdux'
+import App from './components/app'
+
+const bduxContext = {
+  dispatcher: createDispatcher(),
+  stores: new WeakMap()
+}
+
+const renderApp = () => (
+  <BduxContext.Provider value={bduxContext}>
+    <App />
+  </BduxContext.Provider>
+)
+
+ReactDOM.render(
+  renderApp(),
+  document.getElementById('app')
+)
 ```
 
 ## Middleware
@@ -186,35 +197,35 @@ Middleware exports `getPreReduce`, `getPostReduce` and `decorateComponent` optio
 
 Example of a middleware:
 ```javascript
-import Bacon from 'baconjs';
+import Bacon from 'baconjs'
 
 const logPreReduce = ({ action }) => {
-  console.log('before reducer');
-};
+  console.log('before reducer')
+}
 
 const logPostReduce = ({ nextState }) => {
-  console.log('after reducer');
-};
+  console.log('after reducer')
+}
 
 export const getPreReduce = () => {
-  const preStream = new Bacon.Bus();
+  const preStream = new Bacon.Bus()
 
   return {
     input: preStream,
     output: preStream
       .doAction(logPreReduce)
-  };
-};
+  }
+}
 
 export const getPostReduce = () => {
-  const postStream = new Bacon.Bus();
+  const postStream = new Bacon.Bus()
 
   return {
     input: postStream,
     output: postStream
       .doAction(logPostReduce)
-  };
-};
+  }
+}
 ```
 
 ## Apply middleware
@@ -222,14 +233,14 @@ Middleware should be configured before importing any store.
 
 Example of applying middlewares:
 ```javascript
-import * as Logger from 'bdux-logger';
-import * as Timetravel from 'bdux-timetravel';
-import { applyMiddleware } from 'bdux';
+import * as Logger from 'bdux-logger'
+import * as Timetravel from 'bdux-timetravel'
+import { applyMiddleware } from 'bdux'
 
 applyMiddleware(
   Timetravel,
   Logger
-);
+)
 ```
 
 ## Examples
