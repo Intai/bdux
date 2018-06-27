@@ -354,11 +354,13 @@ describe('Store', () => {
     store.getProperty().onValue()
     getActionStream().push({})
     chai.expect(logPre.calledOnce).to.be.true
-    chai.expect(logPre.lastCall.args[0]).to.eql({
-      name: 'name',
-      action: {},
-      state: 'middleware'
-    })
+    chai.expect(logPre.lastCall.args[0])
+      .to.include.keys(['dispatch', 'bindToDispatch'])
+      .and.deep.include({
+        name: 'name',
+        action: {},
+        state: 'middleware'
+      })
   })
 
   it('should pass store name to middleware pluggable before reducer', () => {
@@ -371,7 +373,9 @@ describe('Store', () => {
     store.getProperty().onValue()
     getActionStream().push({})
     chai.expect(logger.getPreReduce.calledOnce).to.be.true
-    chai.expect(logger.getPreReduce.lastCall.args[0]).to.equal('name')
+    chai.expect(logger.getPreReduce.lastCall.args[0])
+      .to.include.keys(['dispatch', 'bindToDispatch'])
+      .and.have.property('name', 'name')
   })
 
   it('should pass store name to middleware pluggable after reducer', () => {
@@ -384,7 +388,9 @@ describe('Store', () => {
     store.getProperty().onValue()
     getActionStream().push({})
     chai.expect(logger.getPostReduce.calledOnce).to.be.true
-    chai.expect(logger.getPostReduce.lastCall.args[0]).to.equal('name')
+    chai.expect(logger.getPostReduce.lastCall.args[0])
+      .to.include.keys(['dispatch', 'bindToDispatch'])
+      .and.have.property('name', 'name')
   })
 
   it('should flow through a single middleware before reducer', () => {
@@ -405,11 +411,13 @@ describe('Store', () => {
     store.getProperty().onValue()
     getActionStream().push({})
     chai.expect(logPre.calledOnce).to.be.true
-    chai.expect(logPre.lastCall.args[0]).to.eql({
-      name: 'name',
-      action: {},
-      state: null
-    })
+    chai.expect(logPre.lastCall.args[0])
+      .to.include.keys(['dispatch', 'bindToDispatch'])
+      .and.deep.include({
+        name: 'name',
+        action: {},
+        state: null
+      })
   })
 
   it('should flow through a single middleware after reducer', () => {
@@ -434,12 +442,14 @@ describe('Store', () => {
 
     clock.tick(1)
     chai.expect(logPost.calledOnce).to.be.true
-    chai.expect(logPost.lastCall.args[0]).to.eql({
-      name: 'name',
-      action: {},
-      state: null,
-      nextState: 'test'
-    })
+    chai.expect(logPost.lastCall.args[0])
+      .to.include.keys(['dispatch', 'bindToDispatch'])
+      .and.deep.include({
+        name: 'name',
+        action: {},
+        state: null,
+        nextState: 'test'
+      })
   })
 
   it('should flow through multiple middlewares', () => {
@@ -463,20 +473,24 @@ describe('Store', () => {
     store.getProperty().onValue()
     getActionStream().push({})
     chai.expect(logPre.calledTwice).to.be.true
-    chai.expect(logPre.lastCall.args[0]).to.eql({
-      name: 'name',
-      action: {},
-      state: null
-    })
+    chai.expect(logPre.lastCall.args[0])
+      .to.include.keys(['dispatch', 'bindToDispatch'])
+      .and.deep.include({
+        name: 'name',
+        action: {},
+        state: null
+      })
 
     clock.tick(1)
     chai.expect(logPost.calledOnce).to.be.true
-    chai.expect(logPost.lastCall.args[0]).to.eql({
-      name: 'name',
-      action: {},
-      state: null,
-      nextState: 'test'
-    })
+    chai.expect(logPost.lastCall.args[0])
+      .to.include.keys(['dispatch', 'bindToDispatch'])
+      .and.deep.include({
+        name: 'name',
+        action: {},
+        state: null,
+        nextState: 'test'
+      })
   })
 
   afterEach(() => {

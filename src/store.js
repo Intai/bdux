@@ -21,7 +21,7 @@ const mergeNextState = (reducerArgs, nextState) => (
 )
 
 const wrapReducer = (getReducer) => () => {
-  let pluggable = getReducer()
+  const pluggable = getReducer()
   return {
     input: pluggable.input,
     output: Bacon.zipWith(pluggable.input, pluggable.output,
@@ -29,25 +29,31 @@ const wrapReducer = (getReducer) => () => {
   }
 }
 
-const plugStreams = R.curry((name, fromStream, getPluggable) => {
-  let pluggable = getPluggable(name)
+const plugStreams = (params) => (fromStream, getPluggable) => {
+  const pluggable = getPluggable(params)
   pluggable.input.plug(fromStream)
   return pluggable.output
-})
+}
 
-const plugPreReducerPost = (name, getReducer, reducerArgs) => (
+const plugPreReducerPost = (name, dispatcher, getReducer, reducerArgs) => {
+  const params = {
+    name,
+    dispatch: dispatcher.dispatchAction,
+    bindToDispatch: dispatcher.bindToDispatch
+  }
+
   // pass the store name to middlewares.
-  R.reduce(plugStreams(name),
+  return R.reduce(plugStreams(params),
     // pass action and store states,
     Bacon.when(reducerArgs, mapPreArgs)
       // merge in the store name.
-      .map(R.merge({ name: name })),
+      .map(R.merge(params)),
     // to pre-reduce middlewares, reducer then post-reduce.
     R.flatten([preReduces.get(), wrapReducer(getReducer), postReduces.get()])
   )
   // get the reduced state.
   .map(R.prop('nextState'))
-)
+}
 
 const partialStoreName = R.pipe(
   R.of,
@@ -122,11 +128,11 @@ const getFirstActionInQueue = R.pipe(
 
 const createStoreInstance = (getReducer, otherStores) => (name, dispatcher) => {
   // store properties.
-  let storeStream = new Bacon.Bus(),
-      defaultValue = getDefaultValue(name),
-      storeProperty = storeStream.toProperty(defaultValue),
-      otherProperties = getStoreProperties(otherStores),
-      queue = accumActionSeed(getAccumSeed)
+  const storeStream = new Bacon.Bus()
+  const defaultValue = getDefaultValue(name)
+  const storeProperty = storeStream.toProperty(defaultValue)
+  const otherProperties = getStoreProperties(otherStores)
+  const queue = accumActionSeed(getAccumSeed)
 
   const actionStream = Bacon.when(
     [dispatcher.getActionStream()], R.objOf('action'),
@@ -145,6 +151,7 @@ const createStoreInstance = (getReducer, otherStores) => (name, dispatcher) => {
   // an array of action and store states.
   return plugPreReducerPost(
     name,
+    dispatcher,
     getReducer, [
       actionStream,
       storeProperty,
