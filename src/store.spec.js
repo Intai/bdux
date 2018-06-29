@@ -56,6 +56,27 @@ describe('Store', () => {
     chai.expect(store.getProperty()).to.equal(store.getProperty())
   })
 
+  it('should pass dispatcher to create reducer', () => {
+    const dispatcher = createDispatcher()
+    const getReducer = sinon.spy(createPluggable())
+
+    createStore(R.prop('id'), getReducer)
+      .getProperty({
+        id: 1,
+        bdux: {
+          dispatcher,
+          stores: new WeakMap()
+        }
+      })
+
+    chai.expect(getReducer.calledOnce).to.be.true
+    chai.expect(getReducer.lastCall.args[0]).to.eql({
+      name: 1,
+      dispatch: dispatcher.dispatchAction,
+      bindToDispatch: dispatcher.bindToDispatch
+    })
+  })
+
   it('should get the same store property instance by props', () => {
     const store = createStore(R.prop('id'), createPluggable())
     const property1 = store.getProperty({ id: 1 })

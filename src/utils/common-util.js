@@ -13,7 +13,9 @@ export const isReactNative = () => (
 )
 
 export const getTimeFunc = () => (
-  Date.now || (() => new Date().getTime())
+  (Date.now)
+    ? () => Date.now()
+    : () => new Date().getTime()
 )
 
 export default {

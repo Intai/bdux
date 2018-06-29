@@ -20,8 +20,8 @@ const mergeNextState = (reducerArgs, nextState) => (
   })
 )
 
-const wrapReducer = (getReducer) => () => {
-  const pluggable = getReducer()
+const wrapReducer = (getReducer) => (params) => {
+  const pluggable = getReducer(params)
   return {
     input: pluggable.input,
     output: Bacon.zipWith(pluggable.input, pluggable.output,

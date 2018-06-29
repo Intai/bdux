@@ -27,6 +27,9 @@ describe('Dispatcher', () => {
   })
 
   it('should create independent dispatchers', () => {
+    clock.restore()
+    clock = sinon.useFakeTimers(1)
+
     const dispatcher1 = createDispatcher()
     const dispatcher2 = createDispatcher()
     const id1 = dispatcher1.generateActionId()
