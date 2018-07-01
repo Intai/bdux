@@ -72,7 +72,10 @@ const getDefaultValue = (name) => {
 }
 
 const getStoreProperties = R.pipe(
-  R.map(R.invoker(0, 'getProperty')),
+  R.useWith(R.map, [
+    R.invoker(1, 'getProperty'),
+    R.identity
+  ]),
   Bacon.combineTemplate
 )
 
@@ -126,12 +129,13 @@ const getFirstActionInQueue = R.pipe(
   R.head
 )
 
-const createStoreInstance = (getReducer, otherStores) => (name, dispatcher) => {
+const createStoreInstance = (getReducer, otherStores) => (name, props) => {
   // store properties.
   const storeStream = new Bacon.Bus()
   const defaultValue = getDefaultValue(name)
   const storeProperty = storeStream.toProperty(defaultValue)
-  const otherProperties = getStoreProperties(otherStores)
+  const otherProperties = getStoreProperties(props, otherStores)
+  const dispatcher = getContext(props).dispatcher
   const queue = accumActionSeed(getAccumSeed)
 
   const actionStream = Bacon.when(
@@ -164,8 +168,8 @@ const createStoreInstance = (getReducer, otherStores) => (name, dispatcher) => {
   .toProperty(defaultValue)
 }
 
-const getPropertyCreate = (name, instances, dispatcher, createInstance) => {
-  const instance = createInstance(name, dispatcher)
+const getPropertyCreate = (name, instances, props, createInstance) => {
+  const instance = createInstance(name, props)
   instances[name] = instance
   return instance
 }
@@ -209,7 +213,7 @@ const getProperty = (getConfig, createInstance, store) => (props) => (
   getPropertyInstance(
     config(getConfig, props).name,
     getStoreInstances(store, props),
-    getContext(props).dispatcher,
+    props,
     createInstance
   )
 )

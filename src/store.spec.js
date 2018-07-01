@@ -77,6 +77,29 @@ describe('Store', () => {
     })
   })
 
+  it('should pass dispatcher to receive another state', () => {
+    const dispatcher = createDispatcher()
+    const getOtherReducer = sinon.spy(createPluggable())
+    const store = createStore(R.prop('id'), createPluggable(), {
+      other: createStore('other', getOtherReducer)
+    })
+
+    store.getProperty({
+      id: 2,
+      bdux: {
+        dispatcher,
+        stores: new WeakMap()
+      }
+    })
+
+    chai.expect(getOtherReducer.calledOnce).to.be.true
+    chai.expect(getOtherReducer.lastCall.args[0]).to.eql({
+      name: 'other',
+      dispatch: dispatcher.dispatchAction,
+      bindToDispatch: dispatcher.bindToDispatch
+    })
+  })
+
   it('should get the same store property instance by props', () => {
     const store = createStore(R.prop('id'), createPluggable())
     const property1 = store.getProperty({ id: 1 })

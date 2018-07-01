@@ -17,7 +17,7 @@ const getBindToDispatch = R.pathOr(
   R.identity, ['dispatcher', 'bindToDispatch']
 )
 
-const subscribe = R.curry((component, store, name) => (
+const subscribe = (component) => (store, name) => (
   // subscribe to a store.
   store.getProperty(component.props)
     // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
@@ -35,17 +35,17 @@ const subscribe = R.curry((component, store, name) => (
       }
     })
     .onValue()
-))
+)
 
-const getProperties = R.uncurryN(2, (component) => R.map(
+const getProperties = (component) => R.map(
   R.invoker(1, 'getProperty')(component.props)
-))
+)
 
 const triggerCallbacks = (component, stores, callbacks) => (
-  Bacon.combineTemplate(
-    R.assoc('props', component.props,
-      getProperties(component, stores))
-  )
+  Bacon.combineTemplate({
+    ...getProperties(component)(stores),
+    props: component.props
+  })
   .first()
   .onValue(R.juxt(
     getBindToDispatch(component.props.bdux)(callbacks)
