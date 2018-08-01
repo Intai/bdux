@@ -58,7 +58,7 @@ Store is created using `createStore(name, getReducer, otherStores = {})`.
 - `otherStores` is an object of dependent stores.
 
 Reducer stream:
-- Receives an input object `{ action, state, ...dependencies }`.
+- Receives an input object `{ action, state, dispatch, bindToDispatch, ...dependencies }`.
 - Should always output the next state according purely on the input object.
 - Should **NOT** have intermediate state. e.g. `scan` or `skipDuplicates`.
 - Should **NOT** have side effect. e.g. `flatMap` or `throttle`.
