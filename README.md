@@ -207,7 +207,7 @@ const logPostReduce = ({ nextState }) => {
   console.log('after reducer')
 }
 
-export const getPreReduce = () => {
+export const getPreReduce = (/*{ name, dispatch, bindToDispatch }*/) => {
   const preStream = new Bacon.Bus()
 
   return {
