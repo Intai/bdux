@@ -168,6 +168,34 @@ describe('Dispatcher', () => {
     })
   })
 
+  it('should dispatch an action of bacon property', () => {
+    const callback = sinon.stub()
+    const dispatcher = createDispatcher()
+    dispatcher.getActionStream().onValue(callback)
+    dispatcher.dispatchAction(Bacon.constant({ type: 'test' }))
+
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.include({
+      type: 'test'
+    })
+  })
+
+  it('should send the latest value of bacon property on subscription', () => {
+    const callback = sinon.stub()
+    const dispatcher = createDispatcher()
+    const bus = new Bacon.Bus()
+    dispatcher.getActionStream().onValue(callback)
+    dispatcher.dispatchAction(bus.toProperty())
+    bus.push({ type: 'test1' })
+    bus.push({ type: 'test2' })
+    dispatcher.subscribe()
+
+    chai.expect(callback.callCount).to.equal(3)
+    chai.expect(callback.lastCall.args[0]).to.include({
+      type: 'test2'
+    })
+  })
+
   afterEach(() => {
     clock.restore()
   })

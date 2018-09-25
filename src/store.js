@@ -195,6 +195,11 @@ const getContext = (props) => (
   (props && props.bdux) || defaultContextValue
 )
 
+const subscribeToDispatcher = (props) => {
+  const { dispatcher } = getContext(props)
+  dispatcher.subscribe()
+}
+
 const getStoreInstances = (store, props) => {
   const { stores } = getContext(props)
 
@@ -209,14 +214,15 @@ const getStoreInstances = (store, props) => {
   }
 }
 
-const getProperty = (getConfig, createInstance, store) => (props) => (
-  getPropertyInstance(
+const getProperty = (getConfig, createInstance, store) => (props) => {
+  subscribeToDispatcher(props)
+  return getPropertyInstance(
     config(getConfig, props).name,
     getStoreInstances(store, props),
     props,
     createInstance
   )
-)
+}
 
 const removeProperty = (getConfig, store) => (props) => {
   const { name, isRemovable } = config(getConfig, props)

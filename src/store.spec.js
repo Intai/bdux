@@ -100,6 +100,21 @@ describe('Store', () => {
     })
   })
 
+  it('should subscribe to dispatcher when getting a store property', () => {
+    const dispatcher = createDispatcher()
+    sinon.spy(dispatcher, 'subscribe')
+    createStore(R.prop('id'), createPluggable())
+      .getProperty({
+        id: 1,
+        bdux: {
+          dispatcher,
+          stores: new WeakMap()
+        }
+      })
+
+    chai.expect(dispatcher.subscribe.calledOnce).to.be.true
+  })
+
   it('should get the same store property instance by props', () => {
     const store = createStore(R.prop('id'), createPluggable())
     const property1 = store.getProperty({ id: 1 })

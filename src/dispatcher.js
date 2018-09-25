@@ -5,6 +5,11 @@ import Common from './utils/common-util'
 export const createDispatcher = () => {
   // stream actions from creators to stores.
   const actionStream = new Bacon.Bus()
+  // stream to be triggered on subscription.
+  const subscribeStream = new Bacon.Bus()
+  // the latest subscription.
+  const subscribeProperty = subscribeStream
+    .toProperty({})
 
   const generateActionId = (() => {
     let id = Common.now() * 1000
@@ -18,12 +23,35 @@ export const createDispatcher = () => {
     ]
   )
 
+  const subscribe = () => {
+    subscribeStream.push({})
+  }
+
   const plugObservable = (observable) => {
-    actionStream.plug(observable
+    actionStream.plug(observable)
+  }
+
+  const mergeActionId = (observable) => (
+    observable
       .filter(R.is(Object))
       // merge in an action identifier.
-      .map(mergeId))
-  }
+      .map(mergeId)
+  )
+
+  const combineSubscription = (observable) => (
+    observable.combine(subscribeProperty, R.identity)
+  )
+
+  const plugEventStream = R.pipe(
+    mergeActionId,
+    plugObservable
+  )
+
+  const plugProperty = R.pipe(
+    mergeActionId,
+    combineSubscription,
+    plugObservable
+  )
 
   const pushAction = (action) => {
     if (R.is(Object, action)) {
@@ -35,7 +63,8 @@ export const createDispatcher = () => {
   const dispatchAction = R.cond([
     [R.not, R.identity],
     // plug an observable to flow actions through the dispatcher.
-    [R.is(Bacon.Observable), R.tap(plugObservable)],
+    [R.is(Bacon.EventStream), R.tap(plugEventStream)],
+    [R.is(Bacon.Property), R.tap(plugProperty)],
     // push a single action through the dispatcher.
     [R.T, R.tap(pushAction)]
   ])
@@ -67,7 +96,8 @@ export const createDispatcher = () => {
     generateActionId,
     getActionStream,
     dispatchAction,
-    bindToDispatch
+    bindToDispatch,
+    subscribe
   }
 }
 
@@ -75,5 +105,6 @@ export const {
   generateActionId,
   getActionStream,
   dispatchAction,
-  bindToDispatch
+  bindToDispatch,
+  subscribe
 } = createDispatcher()
