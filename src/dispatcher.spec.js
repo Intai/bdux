@@ -196,6 +196,21 @@ describe('Dispatcher', () => {
     })
   })
 
+  it('should not send the latest value of bacon stream on subscription', () => {
+    const callback = sinon.stub()
+    const dispatcher = createDispatcher()
+    const bus = new Bacon.Bus()
+    dispatcher.getActionStream().onValue(callback)
+    dispatcher.dispatchAction(bus)
+    bus.push({ type: 'test1' })
+    dispatcher.subscribe()
+
+    chai.expect(callback.callCount).to.equal(1)
+    chai.expect(callback.lastCall.args[0]).to.include({
+      type: 'test1'
+    })
+  })
+
   afterEach(() => {
     clock.restore()
   })
