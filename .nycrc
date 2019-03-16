@@ -1,7 +1,7 @@
 {
   "reporter": [
     "html",
-    "lcov"
+    "lcovonly"
   ],
   "extension": [
     ".js",
