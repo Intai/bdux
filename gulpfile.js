@@ -14,7 +14,7 @@ function clean(cb) {
 gulp.task('cover', function(cb) {
   var cmd = spawn('node', [
     'node_modules/nyc/bin/nyc.js',
-    'node_modules/mocha/bin/mocha',
+    'node_modules/mocha/bin/_mocha',
     '--opts', '.mocha.opts'
   ], {
     stdio: 'inherit'
