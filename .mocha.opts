@@ -1,4 +1,4 @@
---require babel-core/register
+--require @babel/register
 
 src/test.config.js
 src/**/*.spec.js

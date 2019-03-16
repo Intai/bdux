@@ -74,7 +74,7 @@ describe('Component', () => {
   })
 
   it('should set the default component name', () => {
-    const Test = createComponent(R.F)
+    const Test = createComponent(() => false)
     chai.expect(Test.displayName).to.equal('Component')
   })
 

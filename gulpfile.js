@@ -3,30 +3,17 @@
 var gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
     spawn = require('child_process').spawn,
-    srcFiles = './src/**/!(*.spec).js',
+    srcFiles = './src/**/!(*.spec|*.config).js',
     testFiles = './src/**/*.spec.js';
 
-gulp.task('clean', function () {
+function clean(cb) {
   require('del').sync('lib');
-});
+  cb();
+}
 
 gulp.task('cover', function(cb) {
   var cmd = spawn('node', [
-    'node_modules/istanbul/lib/cli.js',
-    'cover',
-    '--root', '.',
-    '-x', '**/*.spec.js',
-    'node_modules/mocha/bin/_mocha',
-    '--', '--opts', '.mocha.opts'
-  ], {
-    stdio: 'inherit'
-  });
-
-  cmd.on('close', cb);
-});
-
-gulp.task('test', function(cb) {
-  var cmd = spawn('node', [
+    'node_modules/nyc/bin/nyc.js',
     'node_modules/mocha/bin/mocha',
     '--opts', '.mocha.opts'
   ], {
@@ -36,30 +23,45 @@ gulp.task('test', function(cb) {
   cmd.on('close', cb);
 });
 
-gulp.task('lint', function () {
+function test(cb) {
+  var cmd = spawn('node', [
+    'node_modules/mocha/bin/mocha',
+    '--opts', '.mocha.opts'
+  ], {
+    stdio: 'inherit'
+  });
+
+  cmd.on('close', cb);
+}
+
+function lint() {
   return gulp.src(srcFiles)
     .pipe($.eslint())
     .pipe($.eslint.format())
     .pipe($.eslint.failAfterError());
-});
+}
 
-gulp.task('babel', function() {
+function babel() {
   return gulp.src(srcFiles)
     .pipe($.babel())
     .pipe(gulp.dest('lib'));
-});
+}
 
-gulp.task('watch', function() {
-  gulp.watch([srcFiles, testFiles], ['test']);
-});
+function watch() {
+  gulp.watch([srcFiles, testFiles], test);
+}
 
-gulp.task('build', [
-  'clean',
-  'babel'
-]);
+gulp.task('test', test);
 
-gulp.task('default', [
-  'lint',
-  'test',
-  'watch'
-]);
+gulp.task('lint', lint);
+
+gulp.task('build', gulp.series(
+  clean,
+  babel
+));
+
+gulp.task('default', gulp.series(
+  lint,
+  test,
+  watch
+));
