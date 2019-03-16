@@ -41,6 +41,7 @@
     "baconjs": "^2.0.11",
     "chai": "^4.2.0",
     "coveralls": "^3.0.3",
+    "cross-env": "^5.2.0",
     "del": "^4.0.0",
     "enzyme": "^3.9.0",
     "enzyme-adapter-react-16": "^1.11.2",
