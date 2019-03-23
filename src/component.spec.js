@@ -134,6 +134,21 @@ describe('Component', () => {
     chai.expect(callback.lastCall.args[0]).to.include({ test: null })
   })
 
+  it('should render with multiple stores', () => {
+    const callback = sinon.stub().returns(false)
+    const Test = createComponent(callback, {
+      test1: createStore('name1', createPluggable()),
+      test2: createStore('name2', createPluggable())
+    })
+
+    shallow(<Test />).html()
+    chai.expect(callback.callCount).to.equal(1)
+    chai.expect(callback.lastCall.args[0]).to.include({
+      test1: null,
+      test2: null
+    })
+  })
+
   it('should unsubscribe from a store', () => {
     sandbox.stub(Common, 'isOnServer')
       .returns(true)

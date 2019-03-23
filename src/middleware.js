@@ -49,13 +49,19 @@ export const decorators = createCollection(
   appendMiddleware('decorateComponent')
 )
 
+// react hooks.
+export const hooks = createCollection(
+  appendMiddleware('useHook')
+)
+
 export const applyMiddleware = (...args) => {
   // loop through an array of middlewares.
   R.forEach(R.juxt([
     preReduces.append,
     postReduces.append,
     defaultValues.append,
-    decorators.append
+    decorators.append,
+    hooks.append,
   ]), args)
 }
 
@@ -63,12 +69,14 @@ export const clearMiddlewares = R.juxt([
   preReduces.clear,
   postReduces.clear,
   defaultValues.clear,
-  decorators.clear
+  decorators.clear,
+  hooks.clear,
 ])
 
 export const getMiddlewares = () => R.clone({
   preReduces: preReduces.get(),
   postReduces: postReduces.get(),
   defaultValues: defaultValues.get(),
-  decorators: decorators.get()
+  decorators: decorators.get(),
+  hooks: hooks.get(),
 })

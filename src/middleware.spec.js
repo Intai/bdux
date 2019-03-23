@@ -25,11 +25,16 @@ describe('middleware', () => {
     decorateComponent: R.F
   })
 
+  const createHook = () => ({
+    useHook: R.F
+  })
+
   const createAll = () => R.mergeAll([
     createPreReduce(),
     createPostReduce(),
     createDefaultValue(),
-    createDecorator()
+    createDecorator(),
+    createHook(),
   ])
 
   it('should apply a single middleware before reducer', () => {
@@ -40,7 +45,8 @@ describe('middleware', () => {
       preReduces: [pre.getPreReduce],
       postReduces: [],
       defaultValues: [],
-      decorators: []
+      decorators: [],
+      hooks: [],
     })
   })
 
@@ -52,7 +58,8 @@ describe('middleware', () => {
       preReduces: [],
       postReduces: [post.getPostReduce],
       defaultValues: [],
-      decorators: []
+      decorators: [],
+      hooks: [],
     })
   })
 
@@ -64,7 +71,8 @@ describe('middleware', () => {
       preReduces: [],
       postReduces: [],
       defaultValues: [middleware.getDefaultValue],
-      decorators: []
+      decorators: [],
+      hooks: [],
     })
   })
 
@@ -76,7 +84,8 @@ describe('middleware', () => {
       preReduces: [],
       postReduces: [],
       defaultValues: [],
-      decorators: [decorator.decorateComponent]
+      decorators: [decorator.decorateComponent],
+      hooks: [],
     })
   })
 
@@ -88,7 +97,8 @@ describe('middleware', () => {
       preReduces: [all.getPreReduce],
       postReduces: [all.getPostReduce],
       defaultValues: [all.getDefaultValue],
-      decorators: [all.decorateComponent]
+      decorators: [all.decorateComponent],
+      hooks: [all.useHook],
     })
   })
 
@@ -101,7 +111,8 @@ describe('middleware', () => {
       preReduces: [pre.getPreReduce],
       postReduces: [post.getPostReduce],
       defaultValues: [],
-      decorators: []
+      decorators: [],
+      hooks: [],
     })
   })
 
@@ -114,7 +125,8 @@ describe('middleware', () => {
       preReduces: [pre.getPreReduce, all.getPreReduce],
       postReduces: [all.getPostReduce],
       defaultValues: [all.getDefaultValue],
-      decorators: [all.decorateComponent]
+      decorators: [all.decorateComponent],
+      hooks: [all.useHook],
     })
   })
 
@@ -126,7 +138,8 @@ describe('middleware', () => {
       preReduces: [],
       postReduces: [],
       defaultValues: [],
-      decorators: []
+      decorators: [],
+      hooks: [],
     })
   })
 

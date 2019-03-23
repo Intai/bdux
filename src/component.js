@@ -22,16 +22,14 @@ const subscribe = (component) => (store, name) => (
   store.getProperty(component.props)
     // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
     .doAction(state => {
-      const update = {
-        // under the name specified.
-        [name]: state
-      }
-
       // pass its state update to the react component.
       if (!component.isConstructed) {
-        component.state = update;
+        component.state[name] = state;
       } else {
-        component.setState(update)
+        component.setState({
+          // under the name specified.
+          [name]: state
+        })
       }
     })
     .onValue()
