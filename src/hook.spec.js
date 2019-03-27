@@ -449,6 +449,31 @@ describe('Hook', () => {
         .and.eql({})
     })
 
+    it('should keep stores in context', () => {
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+      const store = createStore('name', createPluggable())
+      const getProperty = sinon.spy(store, 'getProperty')
+      const Test = (props) => {
+        useBdux(props, { test: store })
+        return null
+      }
+
+      mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      chai.expect(getProperty.callCount).to.equal(1)
+      chai.expect(getProperty.firstCall.args[0]).to.have.property('bdux', bdux)
+      chai.expect(bdux.stores.has(store)).to.be.true
+    })
+
     it('should receive value from context provider', () => {
       const callback = sinon.stub()
       const bdux = {

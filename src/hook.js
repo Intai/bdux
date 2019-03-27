@@ -12,13 +12,14 @@ const getBindToDispatch = R.pathOr(
   R.identity, ['dispatcher', 'bindToDispatch']
 )
 
-const getProperties = (props, stores) => (() => {
+const getProperties = (bdux, props, stores) => (() => {
   let cached
   return () => {
     if (!cached) {
+      const data = { ...props, bdux }
       // cache the store properties.
       cached = R.map(
-        store => store.getProperty(props),
+        store => store.getProperty(data),
         stores
       )
     }
@@ -62,7 +63,7 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
   const bdux = useContext(BduxContext)
   const dispatch = getDispatch(bdux)
   const bindToDispatch = getBindToDispatch(bdux)
-  const getStoreProperties = getProperties(props, stores)
+  const getStoreProperties = getProperties(bdux, props, stores)
   const [state, setState] = useBduxState(getStoreProperties)
 
   useEffect(
