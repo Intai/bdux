@@ -1,7 +1,8 @@
 /* eslint-env node */
 
 var gulp = require('gulp'),
-    $ = require('gulp-load-plugins')(),
+    gulpBabel = require('gulp-babel'),
+    gulpEslint = require('gulp-eslint'),
     spawn = require('child_process').spawn,
     srcFiles = './src/**/!(*.spec|*.config).js',
     testFiles = './src/**/*.spec.js';
@@ -37,14 +38,14 @@ function test(cb) {
 
 function lint() {
   return gulp.src(srcFiles)
-    .pipe($.eslint())
-    .pipe($.eslint.format())
-    .pipe($.eslint.failAfterError());
+    .pipe(gulpEslint())
+    .pipe(gulpEslint.format())
+    .pipe(gulpEslint.failAfterError());
 }
 
 function babel() {
   return gulp.src(srcFiles)
-    .pipe($.babel())
+    .pipe(gulpBabel())
     .pipe(gulp.dest('lib'));
 }
 
