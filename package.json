@@ -26,7 +26,6 @@
   },
   "homepage": "https://github.com/Intai/bdux",
   "dependencies": {
-    "babel-plugin-istanbul": "^5.1.1",
     "ramda": "^0.26.1"
   },
   "devDependencies": {
@@ -38,6 +37,7 @@
     "@babel/preset-react": "^7.0.0",
     "@babel/register": "^7.4.0",
     "babel-eslint": "^10.0.1",
+    "babel-plugin-istanbul": "^5.1.1",
     "baconjs": "^2.0.11",
     "chai": "^4.2.0",
     "coveralls": "^3.0.3",
