@@ -6,7 +6,9 @@ import BduxContext from './context'
 import { decorators } from './middleware'
 
 const getDisplayName = (Component) => (
-  Component.displayName || Component.name || 'Component'
+  Component.displayName || Component.name
+    || (Component.type && Component.type.displayName)
+    || 'Component'
 )
 
 const getDispatch = R.pathOr(
