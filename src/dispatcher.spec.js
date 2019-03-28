@@ -2,7 +2,7 @@
 
 import chai from 'chai'
 import sinon from 'sinon'
-import Bacon from 'baconjs'
+import * as Bacon from 'baconjs'
 import {
   createDispatcher,
   bindToDispatch,

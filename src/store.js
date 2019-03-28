@@ -1,5 +1,5 @@
 import * as R from 'ramda'
-import Bacon from 'baconjs'
+import * as Bacon from 'baconjs'
 import { defaultContextValue } from './context'
 import { preReduces, postReduces, defaultValues } from './middleware'
 

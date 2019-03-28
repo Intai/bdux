@@ -3,7 +3,7 @@
 import * as R from 'ramda'
 import chai from 'chai'
 import sinon from 'sinon'
-import Bacon from 'baconjs'
+import * as Bacon from 'baconjs'
 import { createDispatcher, getActionStream } from './dispatcher'
 import { createStore } from './store'
 import {

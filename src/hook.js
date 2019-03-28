@@ -1,5 +1,5 @@
 import * as R from 'ramda'
-import Bacon from 'baconjs'
+import * as Bacon from 'baconjs'
 import { useContext, useState, useEffect } from 'react'
 import BduxContext from './context'
 import { hooks } from './middleware'

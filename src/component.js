@@ -1,5 +1,5 @@
 import * as R from 'ramda'
-import Bacon from 'baconjs'
+import * as Bacon from 'baconjs'
 import React from 'react'
 import Common from './utils/common-util'
 import BduxContext from './context'
