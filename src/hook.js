@@ -19,7 +19,7 @@ const getProperties = (bdux, props, stores) => (() => {
       const data = { ...props, bdux }
       // cache the store properties.
       cached = R.map(
-        store => store.getProperty(data),
+        store => store.getProperty(data).skipDuplicates(),
         stores
       )
     }

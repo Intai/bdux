@@ -201,6 +201,43 @@ describe('Hook', () => {
         })
     })
 
+    it('should not re-render without state change', () => {
+      const callback = sinon.stub()
+      const action = { type: 'test3' }
+      const store = createStore('name', createPluggable())
+      const dispose = store.getProperty().onValue()
+      getActionStream().push(action)
+      const Test = (props) => {
+        const bdux = useBdux(props, { test: store })
+        callback(bdux)
+        return null
+      }
+
+      mount(<Test />)
+      getActionStream().push(action)
+      getActionStream().push(action)
+      chai.expect(callback.callCount).to.equal(1)
+      dispose()
+    })
+
+    it('should re-render multiple react elements from state change', () => {
+      const callback = sinon.stub()
+      const action = { type: 'test1' }
+      const store = createStore('name', createPluggable())
+      const Test = (props) => {
+        const bdux = useBdux(props, { test: store })
+        callback(bdux)
+        return null
+      }
+
+      mount(<Test />)
+      mount(<Test />)
+      getActionStream().push(action)
+      getActionStream().push(action)
+      getActionStream().push(action)
+      chai.expect(callback.callCount).to.equal(4)
+    })
+
     it('should not subscribe to stores repeatedly', () => {
       const store = createStore('name', createPluggable())
       const spy = sinon.spy(store, 'getProperty')
