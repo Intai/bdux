@@ -1,6 +1,7 @@
 import * as R from 'ramda'
 import * as Bacon from 'baconjs'
-import { useContext, useState, useEffect } from 'react'
+import { useContext, useState, useMemo, useEffect } from 'react'
+import Common from './utils/common-util'
 import BduxContext from './context'
 import { hooks } from './middleware'
 
@@ -66,25 +67,37 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
   const getStoreProperties = getProperties(bdux, props, stores)
   const [state, setState] = useBduxState(getStoreProperties)
 
+  const dispose = useMemo(() => (
+    // subscribe to store properties.
+    Bacon.combineTemplate(getStoreProperties())
+      .skip(1)
+      .onValue(setState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [])
+
+  const unmount = () => {
+    dispose()
+    removeProperties(props)(stores)
+  }
+
   useEffect(
     () => {
-      // subscribe to store properties.
-      const dispose = Bacon.combineTemplate(getStoreProperties())
-        .skip(1)
-        .onValue(setState)
       // trigger callback actions.
       const data = R.assoc('props', props, state)
       R.forEach(callback => dispatch(callback(data)), callbacks)
       // unsubscribe.
-      return () => {
-        dispose()
-        removeProperties(props)(stores)
-      }
+      return unmount
     },
     // only on mount and unmount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
+
+  // assuming only render once on server.
+  if (Common.isOnServer()) {
+    // unmount afterward straight away.
+    unmount()
+  }
 
   return {
     ...useCustomHooks(props),

@@ -83,6 +83,13 @@ describe('Component', () => {
     chai.expect(Test.displayName).to.equal('Test')
   })
 
+  it('should keep the component name from type', () => {
+    const Inner = () => false
+    Inner.displayName = 'Inner'
+    const Test = createComponent()(React.memo(Inner))
+    chai.expect(Test.displayName).to.equal('Inner')
+  })
+
   it('should have no default props', () => {
     const Test = createComponent(R.F)
     chai.expect(Test.defaultProps).to.eql({})

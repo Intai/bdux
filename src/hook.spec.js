@@ -8,6 +8,7 @@ import React from 'react'
 import { JSDOM } from 'jsdom'
 import { shallow, mount } from 'enzyme'
 import BduxContext from './context'
+import Common from './utils/common-util'
 import { useBdux, createUseBdux } from './hook'
 import { createStore } from './store'
 import { createDispatcher, getActionStream } from './dispatcher'
@@ -176,11 +177,17 @@ describe('Hook', () => {
 
   describe('with jsdom', () => {
 
+    let sandbox
+
     beforeEach(() => {
       const dom = new JSDOM('<html></html>')
       global.window = dom.window
       global.document = dom.window.document
       global.Element = dom.window.Element
+
+      sandbox = sinon.createSandbox()
+      sandbox.stub(Common, 'isOnServer')
+        .returns(false)
     })
 
     it('should receive state update', () => {
@@ -692,6 +699,10 @@ describe('Hook', () => {
       chai.expect(callback.lastCall.args[0]).to.have.property('type', 'event2')
       clock.restore()
       dispose()
+    })
+
+    afterEach(() => {
+      sandbox.restore()
     })
 
   })
