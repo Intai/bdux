@@ -13,6 +13,20 @@ const getBindToDispatch = R.pathOr(
   R.identity, ['dispatcher', 'bindToDispatch']
 )
 
+const skipDuplicates = () => {
+  let prev
+  return (value) => {
+    const shouldSkip = prev !== undefined && prev === value
+    prev = value
+    return !shouldSkip
+  }
+}
+
+const skipProperties = R.map(
+  // todo: workaround baconjs v2 bug around skipDuplicates not skipping.
+  property => property.filter(skipDuplicates())
+)
+
 const getProperties = (bdux, props, stores) => (() => {
   let cached
   return () => {
@@ -20,7 +34,7 @@ const getProperties = (bdux, props, stores) => (() => {
       const data = { ...props, bdux }
       // cache the store properties.
       cached = R.map(
-        store => store.getProperty(data).skipDuplicates(),
+        store => store.getProperty(data),
         stores
       )
     }
@@ -69,7 +83,7 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
 
   const dispose = useMemo(() => (
     // subscribe to store properties.
-    Bacon.combineTemplate(getStoreProperties())
+    Bacon.combineTemplate(skipProperties(getStoreProperties()))
       .skip(1)
       .onValue(setState)
     // eslint-disable-next-line react-hooks/exhaustive-deps
