@@ -3,13 +3,13 @@
 var gulp = require('gulp'),
     gulpBabel = require('gulp-babel'),
     gulpEslint = require('gulp-eslint'),
+    del = require('del'),
     spawn = require('child_process').spawn,
     srcFiles = './src/**/!(*.spec|*.config).js',
     testFiles = './src/**/*.spec.js';
 
-function clean(cb) {
-  require('del').sync('lib');
-  cb();
+function clean() {
+  return del(['es', 'lib']);
 }
 
 gulp.task('cover', function(cb) {
@@ -49,6 +49,22 @@ function babel() {
     .pipe(gulp.dest('lib'));
 }
 
+function babelEs() {
+  return gulp.src(srcFiles)
+    .pipe(gulpBabel({
+      presets: [
+        ['@babel/preset-env', { modules: false }],
+        '@babel/react'
+      ],
+      plugins: [
+        '@babel/plugin-syntax-object-rest-spread',
+        '@babel/plugin-proposal-object-rest-spread',
+        '@babel/plugin-proposal-class-properties'
+      ]
+    }))
+    .pipe(gulp.dest('es'));
+}
+
 function watch() {
   gulp.watch([srcFiles, testFiles], test);
 }
@@ -59,7 +75,8 @@ gulp.task('lint', lint);
 
 gulp.task('build', gulp.series(
   clean,
-  babel
+  babel,
+  babelEs
 ));
 
 gulp.task('default', gulp.series(

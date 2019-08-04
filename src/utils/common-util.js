@@ -1,4 +1,8 @@
-import * as R from 'ramda';
+import {
+  both,
+  complement,
+  once,
+} from 'ramda';
 
 export const canUseDOM = () => (
   typeof window !== 'undefined'
@@ -22,12 +26,12 @@ export default {
 
   now: getTimeFunc(),
 
-  isOnServer: R.once(
-    R.complement(
-      R.anyPass([
+  isOnServer: once(
+    complement(
+      both(
         canUseDOM,
         isReactNative
-      ])
+      )
     )
   )
 }

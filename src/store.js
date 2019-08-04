@@ -1,4 +1,19 @@
-import * as R from 'ramda'
+import {
+  append,
+  complement,
+  drop,
+  F,
+  flatten,
+  ifElse,
+  is,
+  map,
+  merge,
+  objOf,
+  pipe,
+  prop,
+  propEq,
+  reduce,
+} from 'ramda'
 import * as Bacon from 'baconjs'
 import { defaultContextValue } from './context'
 import { preReduces, postReduces, defaultValues } from './middleware'
@@ -7,7 +22,7 @@ const STATUS_DISPATCH = 'dispatch'
 const STATUS_ONHOLD = 'onhold'
 
 const mapPreArgs = (action, state, others) => (
-  R.merge({
+  merge({
     action: action,
     state: state
   },
@@ -15,7 +30,7 @@ const mapPreArgs = (action, state, others) => (
 )
 
 const mergeNextState = (reducerArgs, nextState) => (
-  R.merge(reducerArgs, {
+  merge(reducerArgs, {
     nextState: nextState
   })
 )
@@ -43,40 +58,38 @@ const plugPreReducerPost = (name, dispatcher, getReducer, reducerArgs) => {
   }
 
   // pass the store name to middlewares.
-  return R.reduce(plugStreams(params),
+  return reduce(plugStreams(params),
     // pass action and store states,
     Bacon.when(reducerArgs, mapPreArgs)
       // merge in the store name.
-      .map(R.merge(params)),
+      .map(merge(params)),
     // to pre-reduce middlewares, reducer then post-reduce.
-    R.flatten([preReduces.get(), wrapReducer(getReducer), postReduces.get()])
+    flatten([preReduces.get(), wrapReducer(getReducer), postReduces.get()])
   )
   // get the reduced state.
-  .map(R.prop('nextState'))
+  .map(prop('nextState'))
 }
 
-const partialStoreName = R.pipe(
-  R.of,
-  R.flip(R.partial)
+const partialStoreName = (name) => (getter) => (previous) => (
+  getter(name, previous)
 )
 
 const getDefaultValue = (name) => {
-  const getters = R.map(
+  const getters = map(
     partialStoreName(name),
     defaultValues.get()
   )
 
   return (getters.length > 0)
-    ? R.pipe(...getters)(null)
+    ? pipe(...getters)(null)
     : null
 }
 
-const getStoreProperties = R.pipe(
-  R.useWith(R.map, [
-    R.invoker(1, 'getProperty'),
-    R.identity
-  ]),
-  Bacon.combineTemplate
+const getStoreProperties = (props, otherStores) => (
+  Bacon.combineTemplate(map(
+    store => store.getProperty(props),
+    otherStores
+  ))
 )
 
 const getAccumSeed = () => ({
@@ -86,12 +99,12 @@ const getAccumSeed = () => ({
 
 const shiftFromActionQueue = (accum) => ({
   status: STATUS_DISPATCH,
-  queue: R.drop(1, accum.queue)
+  queue: drop(1, accum.queue)
 })
 
 const pushActionOnhold = (accum, payload) => ({
   status: STATUS_ONHOLD,
-  queue: R.append(payload.action, accum.queue)
+  queue: append(payload.action, accum.queue)
 })
 
 const pushActionDispatch = (accum, payload) => ({
@@ -99,34 +112,29 @@ const pushActionDispatch = (accum, payload) => ({
   queue: [payload.action]
 })
 
-const pushToActionQueue = R.ifElse(
+const pushToActionQueue = ifElse(
   // if the action queue is not empty.
-  R.pipe(R.prop('queue'), R.length, R.lt(0)),
+  ({ queue }) => queue.length > 0,
   pushActionOnhold,
   pushActionDispatch
-)
-
-const accumAction = R.ifElse(
-  R.nthArg(1),
-  pushToActionQueue,
-  shiftFromActionQueue
 )
 
 const accumActionSeed = (getAccumSeed) => {
   let accum = getAccumSeed()
   return {
     clear: () => accum = getAccumSeed(),
-    accum: action => accum = accumAction(accum, action)
+    accum: action => accum = (action)
+      ? pushToActionQueue(accum, action)
+      : shiftFromActionQueue(accum)
   }
 }
 
-const isActionQueueOnhold = R.propEq(
+const isActionQueueOnhold = propEq(
   'status', STATUS_ONHOLD
 )
 
-const getFirstActionInQueue = R.pipe(
-  R.prop('queue'),
-  R.head
+const getFirstActionInQueue = ({ queue }) => (
+  queue[0]
 )
 
 const createStoreInstance = (getReducer, otherStores) => (name, props) => {
@@ -139,17 +147,17 @@ const createStoreInstance = (getReducer, otherStores) => (name, props) => {
   const queue = accumActionSeed(getAccumSeed)
 
   const actionStream = Bacon.when(
-    [dispatcher.getActionStream()], R.objOf('action'),
-    [storeStream], R.F,
-    [Bacon.fromBinder(() => queue.clear)], R.F
+    [dispatcher.getActionStream()], objOf('action'),
+    [storeStream], F,
+    [Bacon.fromBinder(() => queue.clear)], F
   )
   // accumulate actions into a fifo queue.
   .map(queue.accum)
   // filter out when the queue is on hold.
-  .filter(R.complement(isActionQueueOnhold))
+  .filter(complement(isActionQueueOnhold))
   // get the first action object in queue.
   .map(getFirstActionInQueue)
-  .filter(R.is(Object))
+  .filter(is(Object))
 
   // store name, reducer and
   // an array of action and store states.
@@ -168,28 +176,21 @@ const createStoreInstance = (getReducer, otherStores) => (name, props) => {
   .toProperty(defaultValue)
 }
 
-const getPropertyCreate = (name, instances, props, createInstance) => {
-  const instance = createInstance(name, props)
-  instances[name] = instance
-  return instance
+const getPropertyInstance = (name, instances, props, createInstance) => (
+  (name in instances)
+    ? instances[name]
+    : (instances[name] = createInstance(name, props))
+)
+
+const config = (firstArg, props) => {
+  const data = (typeof firstArg === 'function')
+    ? firstArg(props)
+    : firstArg;
+
+  return (typeof data !== 'object')
+    ? { name: data }
+    : data;
 }
-
-const getPropertyInstance = R.ifElse(
-  R.has,
-  R.prop,
-  getPropertyCreate
-)
-
-const configObject = R.when(
-  R.complement(R.is(Object)),
-  R.objOf('name')
-)
-
-const config = R.ifElse(
-  R.is(Function),
-  R.pipe(R.call, configObject),
-  configObject
-)
 
 const getContext = (props) => (
   (props && props.bdux) || defaultContextValue

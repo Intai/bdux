@@ -1,4 +1,17 @@
-import * as R from 'ramda'
+import {
+  cond,
+  converge,
+  identity,
+  ifElse,
+  is,
+  map,
+  merge,
+  not,
+  objOf,
+  pipe,
+  T,
+  tap,
+} from 'ramda'
 import * as Bacon from 'baconjs'
 import Common from './utils/common-util'
 
@@ -16,10 +29,10 @@ export const createDispatcher = () => {
     return () => ++id
   })()
 
-  const mergeId = R.converge(
-    R.merge, [
-      R.pipe(generateActionId, R.objOf('id')),
-      R.identity
+  const mergeId = converge(
+    merge, [
+      pipe(generateActionId, objOf('id')),
+      identity
     ]
   )
 
@@ -33,50 +46,50 @@ export const createDispatcher = () => {
 
   const mergeActionId = (observable) => (
     observable
-      .filter(R.is(Object))
+      .filter(is(Object))
       // merge in an action identifier.
       .map(mergeId)
   )
 
   const combineSubscription = (observable) => (
-    observable.combine(subscribeProperty, R.identity)
+    observable.combine(subscribeProperty, identity)
   )
 
-  const plugEventStream = R.pipe(
+  const plugEventStream = pipe(
     mergeActionId,
     plugObservable
   )
 
-  const plugProperty = R.pipe(
+  const plugProperty = pipe(
     mergeActionId,
     combineSubscription,
     plugObservable
   )
 
   const pushAction = (action) => {
-    if (R.is(Object, action)) {
+    if (is(Object, action)) {
       // merge in an identifier.
       actionStream.push(mergeId(action))
     }
   }
 
-  const dispatchAction = R.cond([
-    [R.not, R.identity],
+  const dispatchAction = cond([
+    [not, identity],
     // plug an observable to flow actions through the dispatcher.
-    [R.is(Bacon.EventStream), R.tap(plugEventStream)],
-    [R.is(Bacon.Property), R.tap(plugProperty)],
+    [is(Bacon.EventStream), tap(plugEventStream)],
+    [is(Bacon.Property), tap(plugProperty)],
     // push a single action through the dispatcher.
-    [R.T, R.tap(pushAction)]
+    [T, tap(pushAction)]
   ])
 
-  const wrapActionCreator = (creator) => R.pipe(
+  const wrapActionCreator = (creator) => pipe(
     // call the action creator.
     creator,
     // dispatch the returned action.
     dispatchAction
   )
 
-  const wrapActionCreators = R.map(
+  const wrapActionCreators = map(
     wrapActionCreator
   )
 
@@ -84,8 +97,8 @@ export const createDispatcher = () => {
     actionStream
   )
 
-  const bindToDispatch = R.ifElse(
-    R.is(Function),
+  const bindToDispatch = ifElse(
+    is(Function),
     // wrap to dispatch a single action creator.
     wrapActionCreator,
     // wrap an object of action creators.

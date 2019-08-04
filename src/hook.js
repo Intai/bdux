@@ -1,16 +1,26 @@
-import * as R from 'ramda'
+import {
+  assoc,
+  F,
+  forEach,
+  forEachObjIndexed,
+  identity,
+  map,
+  mergeRight,
+  pathOr,
+  reduce,
+} from 'ramda'
 import * as Bacon from 'baconjs'
 import { useContext, useState, useMemo, useEffect } from 'react'
 import Common from './utils/common-util'
 import BduxContext from './context'
 import { hooks } from './middleware'
 
-const getDispatch = R.pathOr(
-  R.F, ['dispatcher', 'dispatchAction']
+const getDispatch = pathOr(
+  F, ['dispatcher', 'dispatchAction']
 )
 
-const getBindToDispatch = R.pathOr(
-  R.identity, ['dispatcher', 'bindToDispatch']
+const getBindToDispatch = pathOr(
+  identity, ['dispatcher', 'bindToDispatch']
 )
 
 const skipDuplicates = () => {
@@ -22,7 +32,7 @@ const skipDuplicates = () => {
   }
 }
 
-const skipProperties = R.map(
+const skipProperties = map(
   // todo: workaround baconjs v2 bug around skipDuplicates not skipping.
   property => property.filter(skipDuplicates())
 )
@@ -33,7 +43,7 @@ const getProperties = (bdux, props, stores) => (() => {
     if (!cached) {
       const data = { ...props, bdux }
       // cache the store properties.
-      cached = R.map(
+      cached = map(
         store => store.getProperty(data),
         stores
       )
@@ -42,13 +52,13 @@ const getProperties = (bdux, props, stores) => (() => {
   }
 })()
 
-const removeProperties = props => R.map(
+const removeProperties = props => map(
   store => store.removeProperty(props)
 )
 
 const useBduxState = (getStoreProperties) => useState(() => {
   let initial = {}
-  R.forEachObjIndexed(
+  forEachObjIndexed(
     (property, name) => {
       property
         // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
@@ -62,12 +72,12 @@ const useBduxState = (getStoreProperties) => useState(() => {
 })
 
 const useCustomHooks = props => (
-  R.reduce(
+  reduce(
     (acc, useHook) => {
       // run synchronously at the beginning of use fuction.
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const ret = useHook(props)
-      return ret ? R.mergeRight(acc, ret) : acc
+      return ret ? mergeRight(acc, ret) : acc
     },
     {},
     hooks.get()
@@ -97,8 +107,8 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
   useEffect(
     () => {
       // trigger callback actions.
-      const data = R.assoc('props', props, state)
-      R.forEach(callback => dispatch(callback(data)), callbacks)
+      const data = assoc('props', props, state)
+      forEach(callback => dispatch(callback(data)), callbacks)
       // unsubscribe.
       return unmount
     },

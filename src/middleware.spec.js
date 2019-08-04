@@ -37,6 +37,11 @@ describe('middleware', () => {
     createHook(),
   ])
 
+  it('shoud handle invalid middleware', () => {
+    const apply = () => applyMiddleware(null)
+    chai.expect(apply).to.not.throw()
+  })
+
   it('should apply a single middleware before reducer', () => {
     const pre = createPreReduce()
     clearMiddlewares()

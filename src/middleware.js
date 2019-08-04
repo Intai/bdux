@@ -1,23 +1,19 @@
-import * as R from 'ramda'
+import {
+  append,
+  clone,
+  forEach,
+  juxt,
+} from 'ramda'
 
-const hasMiddlewareType = (type, middleware) => (
-  middleware && R.is(Function, middleware[type])
-)
-
-const appendMiddlewareByType = R.converge(
-  R.append, [
-    R.prop,
-    R.nthArg(2)
-  ]
-)
-
-const appendMiddleware = R.curryN(3,
-  R.ifElse(
-    hasMiddlewareType,
-    appendMiddlewareByType,
-    R.nthArg(2)
-  )
-)
+const appendMiddleware = (type) => (middleware, array) => {
+  if (middleware) {
+    const func = middleware[type]
+    if (typeof func === 'function') {
+      return append(func, array)
+    }
+  }
+  return array
+}
 
 const createCollection = (append) => {
   let array = []
@@ -56,7 +52,7 @@ export const hooks = createCollection(
 
 export const applyMiddleware = (...args) => {
   // loop through an array of middlewares.
-  R.forEach(R.juxt([
+  forEach(juxt([
     preReduces.append,
     postReduces.append,
     defaultValues.append,
@@ -65,7 +61,7 @@ export const applyMiddleware = (...args) => {
   ]), args)
 }
 
-export const clearMiddlewares = R.juxt([
+export const clearMiddlewares = juxt([
   preReduces.clear,
   postReduces.clear,
   defaultValues.clear,
@@ -73,7 +69,7 @@ export const clearMiddlewares = R.juxt([
   hooks.clear,
 ])
 
-export const getMiddlewares = () => R.clone({
+export const getMiddlewares = () => clone({
   preReduces: preReduces.get(),
   postReduces: postReduces.get(),
   defaultValues: defaultValues.get(),

@@ -1,4 +1,17 @@
-import * as R from 'ramda'
+import {
+  F,
+  forEachObjIndexed,
+  identity,
+  is,
+  isEmpty,
+  juxt,
+  map,
+  mapObjIndexed,
+  merge,
+  pathOr,
+  pipe,
+  values,
+} from 'ramda'
 import * as Bacon from 'baconjs'
 import React from 'react'
 import Common from './utils/common-util'
@@ -11,12 +24,12 @@ const getDisplayName = (Component) => (
     || 'Component'
 )
 
-const getDispatch = R.pathOr(
-  R.F, ['dispatcher', 'dispatchAction']
+const getDispatch = pathOr(
+  F, ['dispatcher', 'dispatchAction']
 )
 
-const getBindToDispatch = R.pathOr(
-  R.identity, ['dispatcher', 'bindToDispatch']
+const getBindToDispatch = pathOr(
+  identity, ['dispatcher', 'bindToDispatch']
 )
 
 const subscribe = (component) => (store, name) => (
@@ -37,9 +50,9 @@ const subscribe = (component) => (store, name) => (
     .onValue()
 )
 
-const getProperties = (component) => R.map(
-  R.invoker(1, 'getProperty')(component.props)
-)
+const getProperties = (component) => map((store) => (
+  store.getProperty(component.props)
+))
 
 const triggerCallbacks = (component, stores, callbacks) => (
   Bacon.combineTemplate({
@@ -47,25 +60,20 @@ const triggerCallbacks = (component, stores, callbacks) => (
     props: component.props
   })
   .first()
-  .onValue(R.juxt(
+  .onValue(juxt(
     getBindToDispatch(component.props.bdux)(callbacks)
   ))
 )
 
-const hasFuncs = R.allPass([
-  R.is(Array),
-  R.complement(R.isEmpty)
-])
-
-const pipeFuncs = R.ifElse(
-  hasFuncs,
-  R.apply(R.pipe),
-  R.always(R.F)
+const pipeFuncs = (funcs) => (
+  (funcs && funcs.length > 0)
+    ? pipe(...funcs)
+    : F
 )
 
-const removeStores = R.uncurryN(2, (component) => R.forEachObjIndexed((store) => {
+const removeStores = (component) => forEachObjIndexed((store) => {
   store.removeProperty(component.props)
-}))
+})
 
 export const decorateToSubscribeStores = (Component, stores = {}, callbacks = []) => (
   class extends React.Component {
@@ -73,7 +81,6 @@ export const decorateToSubscribeStores = (Component, stores = {}, callbacks = []
     static defaultProps = {}
     state = {}
 
-    /* istanbul ignore next */
     constructor(props) {
       super(props)
       this.subscribeToStores()
@@ -82,16 +89,16 @@ export const decorateToSubscribeStores = (Component, stores = {}, callbacks = []
 
     componentWillUnmount() {
       this.dispose()
-      removeStores(this, stores)
+      removeStores(this)(stores)
     }
 
     subscribeToStores() {
       // pipe all dispose functions.
       this.dispose = pipeFuncs(
         // get the array of dispose functions.
-        R.values(
+        values(
           // subscribe to stores.
-          R.mapObjIndexed(
+          mapObjIndexed(
             subscribe(this),
             stores)
         )
@@ -103,7 +110,7 @@ export const decorateToSubscribeStores = (Component, stores = {}, callbacks = []
 
     render() {
       const element = React.createElement(
-        Component, R.merge(this.props, this.state))
+        Component, merge(this.props, this.state))
 
       // assuming server renders only once.
       if (Common.isOnServer()) {
@@ -137,9 +144,9 @@ export const decorateToConsumeContext = (Component) => {
 
 
 const decorateByMiddlewares = (Component) => (
-  R.isEmpty(decorators.get())
+  isEmpty(decorators.get())
     ? Component
-    : R.apply(R.pipe, decorators.get())(Component)
+    : pipe(...decorators.get())(Component)
 )
 
 const createComponentImplement = (Component, stores = {}, ...callbacks) => (
@@ -159,7 +166,7 @@ const createComponentPipe = (stores = {}, ...callbacks) => (Component) => (
 
 export const createComponent = (...args) => (
   // if the first argument is a react component.
-  (React.Component.isPrototypeOf(args[0]) || R.is(Function, args[0]))
+  (React.Component.isPrototypeOf(args[0]) || is(Function, args[0]))
     ? createComponentImplement(...args)
     : createComponentPipe(...args)
 )
