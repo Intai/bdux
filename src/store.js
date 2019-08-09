@@ -185,11 +185,11 @@ const getPropertyInstance = (name, instances, props, createInstance) => (
 const config = (firstArg, props) => {
   const data = (typeof firstArg === 'function')
     ? firstArg(props)
-    : firstArg;
+    : firstArg
 
-  return (typeof data !== 'object')
-    ? { name: data }
-    : data;
+  return (data && typeof data === 'object')
+    ? data
+    : { name: data }
 }
 
 const getContext = (props) => (

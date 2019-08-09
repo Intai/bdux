@@ -56,6 +56,16 @@ describe('Store', () => {
     chai.expect(store.getProperty()).to.equal(store.getProperty())
   })
 
+  it('should handle invalid store name', () => {
+    const store = createStore(null, createPluggable())
+    chai.expect(store.getProperty()).to.equal(store.getProperty())
+  })
+
+  it('should handle undefined store name', () => {
+    const store = createStore(undefined, createPluggable())
+    chai.expect(store.getProperty()).to.equal(store.getProperty())
+  })
+
   it('should pass dispatcher to create reducer', () => {
     const dispatcher = createDispatcher()
     const getReducer = sinon.spy(createPluggable())
