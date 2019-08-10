@@ -1,5 +1,5 @@
 import {
-  both,
+  either,
   complement,
   once,
 } from 'ramda';
@@ -16,6 +16,13 @@ export const isReactNative = () => (
     && window.navigator.product === 'ReactNative'
 )
 
+export const isOnServer = complement(
+  either(
+    canUseDOM,
+    isReactNative
+  )
+)
+
 export const getTimeFunc = () => (
   (Date.now)
     ? () => Date.now()
@@ -23,15 +30,6 @@ export const getTimeFunc = () => (
 )
 
 export default {
-
   now: getTimeFunc(),
-
-  isOnServer: once(
-    complement(
-      both(
-        canUseDOM,
-        isReactNative
-      )
-    )
-  )
+  isOnServer: once(isOnServer),
 }

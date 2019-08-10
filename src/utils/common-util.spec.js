@@ -4,13 +4,25 @@ import chai from 'chai'
 import Common, {
   canUseDOM,
   isReactNative,
-  getTimeFunc } from './common-util'
+  isOnServer,
+  getTimeFunc
+} from './common-util'
 
 describe('Common Utilities', () => {
 
   it('should be on server when there is no window', () => {
     global.window = undefined
-    chai.expect(Common.isOnServer()).to.be.true
+    chai.expect(isOnServer()).to.be.true
+  })
+
+  it('should not be on server when there is window', () => {
+    global.window = { document: { createElement: () => {} }}
+    chai.expect(isOnServer()).to.be.false
+  })
+
+  it('should not be on server when in react native', () => {
+    global.window = { navigator: { product: 'ReactNative' } }
+    chai.expect(isOnServer()).to.be.false
   })
 
   it('should cache whether currently on server', () => {
