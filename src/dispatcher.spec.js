@@ -211,6 +211,39 @@ describe('Dispatcher', () => {
     })
   })
 
+  it('should not bind the same observable twice', () => {
+    const callback = sinon.stub()
+    const dispatcher = createDispatcher()
+    const bus = new Bacon.Bus()
+    dispatcher.getActionStream().onValue(callback)
+    dispatcher.dispatchAction(bus)
+    dispatcher.dispatchAction(bus)
+    bus.push({ type: 'test1' })
+
+    chai.expect(callback.callCount).to.equal(1)
+    chai.expect(callback.lastCall.args[0]).to.include({
+      type: 'test1'
+    })
+  })
+
+  it('should not bind the same observable more than once', () => {
+    const callback = sinon.stub()
+    const dispatcher = createDispatcher()
+    const bus = new Bacon.Bus()
+    dispatcher.getActionStream().onValue(callback)
+    dispatcher.dispatchAction(bus)
+    dispatcher.dispatchAction(Bacon.once({ type: 'test2' }))
+    dispatcher.dispatchAction(bus)
+    dispatcher.dispatchAction(bus)
+    bus.push({ type: 'test1' })
+
+    clock.next()
+    chai.expect(callback.callCount).to.equal(2)
+    chai.expect(callback.lastCall.args[0]).to.include({
+      type: 'test2'
+    })
+  })
+
   afterEach(() => {
     clock.restore()
   })

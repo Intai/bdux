@@ -55,16 +55,28 @@ export const createDispatcher = () => {
     observable.combine(subscribeProperty, identity)
   )
 
-  const plugEventStream = pipe(
+  const memoize = (func) => {
+    const cached = new WeakMap()
+    return (args) => {
+      // if hasn't been cached.
+      if (!cached.has(args)) {
+        // record the key and return value.
+        cached.set(args, func(args))
+      }
+      return cached.get(args)
+    }
+  }
+
+  const plugEventStream = memoize(pipe(
     mergeActionId,
     plugObservable
-  )
+  ))
 
-  const plugProperty = pipe(
+  const plugProperty = memoize(pipe(
     mergeActionId,
     combineSubscription,
     plugObservable
-  )
+  ))
 
   const pushAction = (action) => {
     if (is(Object, action)) {
