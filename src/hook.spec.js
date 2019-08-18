@@ -116,8 +116,10 @@ describe('Hook', () => {
     const callback = sinon.stub()
     clearMiddlewares()
     applyMiddleware(({
-      useHook: (props) => {
-        callback()
+      useHook: (props, { dispatch }) => {
+        if (dispatch) {
+          callback()
+        }
         return {
           logged: props
         }

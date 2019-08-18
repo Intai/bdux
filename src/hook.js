@@ -71,12 +71,12 @@ const useBduxState = (getStoreProperties) => useState(() => {
   return initial
 })
 
-const useCustomHooks = props => (
+const useCustomHooks = (props, params) => (
   reduce(
     (acc, useHook) => {
       // run synchronously at the beginning of use fuction.
       // eslint-disable-next-line react-hooks/rules-of-hooks
-      const ret = useHook(props)
+      const ret = useHook(props, params)
       return ret ? mergeRight(acc, ret) : acc
     },
     {},
@@ -123,11 +123,14 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
     unmount()
   }
 
-  return {
-    ...useCustomHooks(props),
+  const params = {
     dispatch,
     bindToDispatch,
     state,
+  }
+  return {
+    ...useCustomHooks(props, params),
+    ...params,
   }
 }
 
