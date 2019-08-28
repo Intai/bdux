@@ -1,6 +1,6 @@
 {
   "name": "bdux",
-  "version": "16.8.16",
+  "version": "16.8.17",
   "description": "A Flux implementation",
   "module": "es/index.js",
   "main": "lib/index.js",
