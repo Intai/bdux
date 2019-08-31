@@ -166,6 +166,7 @@ const createComponentPipe = (stores = {}, ...callbacks) => (Component) => (
 
 export const createComponent = (...args) => (
   // if the first argument is a react component.
+  // eslint-disable-next-line no-prototype-builtins
   (React.Component.isPrototypeOf(args[0]) || is(Function, args[0]))
     ? createComponentImplement(...args)
     : createComponentPipe(...args)

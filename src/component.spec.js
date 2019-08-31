@@ -16,7 +16,7 @@ import {
   clearMiddlewares,
   applyMiddleware } from './middleware'
 
-const createPluggable = (log) => () => {
+const createPluggable = (log = R.F) => () => {
   const stream = new Bacon.Bus()
   return {
     input: stream,
@@ -65,6 +65,7 @@ describe('Component', () => {
 
   it('should decorate to stores with a react component', () => {
     const Test = decorateToSubscribeStores(R.F)
+    // eslint-disable-next-line no-prototype-builtins
     chai.expect(React.Component.isPrototypeOf(Test)).to.be.true
   })
 
@@ -130,7 +131,7 @@ describe('Component', () => {
     const store = createStore('name', createPluggable())
     const Test = createComponent(callback, { test: store })
 
-    store.getProperty()
+    const dispose = store.getProperty()
       .map(<Test />)
       .map(shallow)
       .map(R.invoker(0, 'html'))
@@ -139,6 +140,7 @@ describe('Component', () => {
 
     chai.expect(callback.calledOnce).to.be.true
     chai.expect(callback.lastCall.args[0]).to.include({ test: null })
+    dispose()
   })
 
   it('should render with multiple stores', () => {
@@ -297,7 +299,7 @@ describe('Component', () => {
       const store = createStore('name', createPluggable())
       const Test = createComponent(R.F, { test: store }, callback)
 
-      store.getProperty()
+      const dispose = store.getProperty()
         .map(<Test />)
         .map(mount)
         .first()
@@ -307,6 +309,7 @@ describe('Component', () => {
       chai.expect(callback.lastCall.args[0])
         .to.include({ test: null })
         .and.have.property('props')
+      dispose()
     })
 
     it('should trigger multiple callbacks after subscription', () => {
@@ -335,7 +338,7 @@ describe('Component', () => {
 
       const Test = createComponent(R.F, {},
         R.always({ type: 'test' }))
-      bdux.dispatcher.getActionStream()
+      const dispose = bdux.dispatcher.getActionStream()
         .onValue(callback)
 
       mount(
@@ -350,6 +353,7 @@ describe('Component', () => {
       chai.expect(callback.lastCall.args[0])
         .to.include({ type: 'test' })
         .and.have.property('id')
+      dispose()
     })
 
     it('should provide convenience to pipe decorators', () => {
@@ -426,7 +430,7 @@ describe('Component', () => {
       }
 
       const callback = sinon.stub()
-      bdux.dispatcher.getActionStream()
+      const dispose = bdux.dispatcher.getActionStream()
         .onValue(callback)
 
       const Test = createComponent(({ bindToDispatch }) => {
@@ -446,6 +450,7 @@ describe('Component', () => {
       chai.expect(callback.lastCall.args[0])
         .to.include({ type: 'render' })
         .and.have.property('id')
+      dispose()
     })
 
     it('should bind multiple action creators to dispatch', () => {
@@ -455,7 +460,7 @@ describe('Component', () => {
       }
 
       const callback = sinon.stub()
-      bdux.dispatcher.getActionStream()
+      const dispose = bdux.dispatcher.getActionStream()
         .onValue(callback)
 
       const Test = createComponent(({ bindToDispatch }) => {
@@ -479,6 +484,7 @@ describe('Component', () => {
       chai.expect(callback.calledTwice).to.be.true
       chai.expect(callback.firstCall.args[0]).to.have.property('type', 'test1')
       chai.expect(callback.lastCall.args[0]).to.have.property('type', 'test2')
+      dispose()
     })
 
     it('should dispatch a single action', () => {
@@ -488,7 +494,7 @@ describe('Component', () => {
       }
 
       const callback = sinon.stub()
-      bdux.dispatcher.getActionStream()
+      const dispose = bdux.dispatcher.getActionStream()
         .onValue(callback)
 
       const Test = createComponent(({ dispatch }) => {
@@ -506,6 +512,7 @@ describe('Component', () => {
 
       chai.expect(callback.calledOnce).to.be.true
       chai.expect(callback.lastCall.args[0]).to.have.property('type', 'test')
+      dispose()
     })
 
     it('should dispatch actions from a bacon stream', () => {
@@ -516,7 +523,7 @@ describe('Component', () => {
       }
 
       const callback = sinon.stub()
-      bdux.dispatcher.getActionStream()
+      const dispose = bdux.dispatcher.getActionStream()
         .onValue(callback)
 
       const Test = createComponent(({ dispatch }) => {
@@ -540,6 +547,7 @@ describe('Component', () => {
       chai.expect(callback.firstCall.args[0]).to.have.property('type', 'event1')
       chai.expect(callback.lastCall.args[0]).to.have.property('type', 'event2')
       clock.restore()
+      dispose()
     })
 
   })

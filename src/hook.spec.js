@@ -14,7 +14,7 @@ import { createStore } from './store'
 import { createDispatcher, getActionStream } from './dispatcher'
 import { clearMiddlewares, applyMiddleware } from './middleware'
 
-const createPluggable = (log) => () => {
+const createPluggable = (log = R.F) => () => {
   const stream = new Bacon.Bus()
   return {
     input: stream,
