@@ -101,7 +101,7 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
 
   const unmount = () => {
     dispose()
-    removeProperties(props)(stores)
+    removeProperties({ ...props, bdux })(stores)
   }
 
   useEffect(

@@ -520,6 +520,35 @@ describe('Hook', () => {
       chai.expect(bdux.stores.has(store)).to.be.true
     })
 
+    it('should remove store by props in context', () => {
+      const bdux = {
+        dispatcher: createDispatcher(),
+        stores: new WeakMap()
+      }
+      const getInstance = props => ({
+        name: props.id,
+        isRemovable: true
+      })
+
+      const store = createStore(getInstance, createPluggable())
+      const Test = (props) => {
+        useBdux(props, { test: store })
+        return null
+      }
+
+      const wrapper =  mount(
+        <div>
+          <BduxContext.Provider value={bdux}>
+            <Test id="1" />
+          </BduxContext.Provider>
+        </div>
+      )
+
+      chai.expect(bdux.stores.get(store)).to.have.property('1')
+      wrapper.unmount()
+      chai.expect(bdux.stores.get(store)).to.not.have.property('1')
+    })
+
     it('should receive value from context provider', () => {
       const callback = sinon.stub()
       const bdux = {
