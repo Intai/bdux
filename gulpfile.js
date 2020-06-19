@@ -14,10 +14,12 @@ function clean() {
 
 gulp.task('cover', function(cb) {
   var cmd = spawn('node', [
-    'node_modules/cross-env/dist/bin/cross-env.js', 'NODE_ENV=test',
+    'node_modules/cross-env/src/bin/cross-env.js', 'NODE_ENV=test',
     'node_modules/nyc/bin/nyc.js',
     'node_modules/mocha/bin/_mocha',
-    '--opts', '.mocha.opts'
+    '--require', '@babel/register',
+    'src/test.config.js',
+    'src/**/*.spec.js'
   ], {
     stdio: 'inherit'
   });
@@ -28,7 +30,9 @@ gulp.task('cover', function(cb) {
 function test(cb) {
   var cmd = spawn('node', [
     'node_modules/mocha/bin/mocha',
-    '--opts', '.mocha.opts'
+    '--require', '@babel/register',
+    'src/test.config.js',
+    'src/**/*.spec.js'
   ], {
     stdio: 'inherit'
   });
