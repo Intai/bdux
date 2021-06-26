@@ -162,7 +162,7 @@ const CountDown = (props) => {
     dispatch(CountDownAction.doubleClick())
   }, [dispatch])
 
-  return state && R.is(Number, state.countdown) && (
+  return R.is(Number, state.countdown) && (
     <button
       onClick={ handleClick }
       onDoubleClick={ handleDoubleClick }
