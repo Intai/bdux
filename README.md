@@ -4,7 +4,7 @@ A [Flux](https://github.com/facebook/flux/) architecture implementation out of e
 
 [![Build Status](https://travis-ci.com/Intai/bdux.svg?branch=master)](https://travis-ci.com/Intai/bdux)
 [![Coverage Status](https://coveralls.io/repos/github/Intai/bdux/badge.svg?branch=master)](https://coveralls.io/github/Intai/bdux?branch=master)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5fa846d4f9a643bea49511814e95f0fc)](https://www.codacy.com/app/intai-hg/bdux?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Intai/bdux&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ddd525f402f149d083a44c22ed0f3317)](https://www.codacy.com/gh/Intai/bdux/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Intai/bdux&amp;utm_campaign=Badge_Grade)
 
 ## Want to achieve
 - Reactive all the way from action to React component.
