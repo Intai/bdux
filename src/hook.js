@@ -3,14 +3,16 @@ import {
   F,
   forEach,
   forEachObjIndexed,
+  keys,
   identity,
+  inc,
   map,
   mergeRight,
   pathOr,
   reduce,
 } from 'ramda'
 import * as Bacon from 'baconjs'
-import { useContext, useState, useMemo, useEffect } from 'react'
+import { useContext, useState, useRef, useMemo, useEffect } from 'react'
 import Common from './utils/common-util'
 import BduxContext from './context'
 import { hooks } from './middleware'
@@ -23,41 +25,59 @@ const getBindToDispatch = pathOr(
   identity, ['dispatcher', 'bindToDispatch']
 )
 
-const skipDuplicates = () => {
-  let prev
-  return (value) => {
-    const shouldSkip = prev !== undefined && prev === value
-    prev = value
-    return !shouldSkip
-  }
-}
-
-const skipProperties = map(
-  // todo: workaround baconjs v2 bug around skipDuplicates not skipping.
-  property => property.filter(skipDuplicates())
+const skipPropertiesDefault = map(
+  property => property.skipDuplicates()
 )
 
-const getProperties = (bdux, props, stores) => (() => {
+const shallowEqual = (a, b) => {
+  const keysA = keys(a)
+  const keysB = keys(b)
+
+  if (keysA.length !== keysB.length) {
+    return false
+  }
+  for (let i = 0; i < keysA.length; i++) {
+    const key = keysA[i]
+    const valueA = a[key]
+    const valueB = b[key]
+
+    if (valueA !== valueB) {
+      return false
+    }
+  }
+  return true
+}
+
+const getPropertiesMemo = () => {
   let cached
-  return () => {
-    if (!cached) {
-      const data = { ...props, bdux }
+  let prevBdux
+  let prevProps
+  let prevStores
+
+  return (bdux, props, stores) => {
+    if (!cached || prevBdux !== bdux
+      || !shallowEqual(prevProps, props)
+      || !shallowEqual(prevStores, stores)) {
       // cache the store properties.
       cached = map(
-        store => store.getProperty(data),
+        store => store.getProperty({ ...props, bdux }),
         stores
       )
+      prevBdux = bdux
+      prevProps = props
+      prevStores = stores
     }
     return cached
   }
-})()
+}
 
 const removeProperties = props => map(
   store => store.removeProperty(props)
 )
 
-const useBduxState = (getStoreProperties) => useState(() => {
+const getInitialState = (storeProperties) => {
   let initial = {}
+  // forEach instead of combineTemplate to be synchronous.
   forEachObjIndexed(
     (property, name) => {
       property
@@ -65,11 +85,10 @@ const useBduxState = (getStoreProperties) => useState(() => {
         .doAction(val => initial[name] = val)
         .onValue(() => Bacon.noMore)
     },
-    // forEach instead of combineTemplate to be synchronous.
-    getStoreProperties()
+    storeProperties
   )
   return initial
-})
+}
 
 const useCustomHooks = (props, params) => (
   reduce(
@@ -84,30 +103,52 @@ const useCustomHooks = (props, params) => (
   )
 )
 
-export const useBdux = (props, stores = {}, ...callbacks) => {
+export const useBdux = (
+  props,
+  stores = {},
+  callbacks = [],
+  skipProperties = skipPropertiesDefault,
+) => {
   const bdux = useContext(BduxContext)
   const dispatch = getDispatch(bdux)
   const bindToDispatch = getBindToDispatch(bdux)
-  const getStoreProperties = getProperties(bdux, props, stores)
-  const [state, setState] = useBduxState(getStoreProperties)
+  const getProperties = useMemo(() => getPropertiesMemo(), [])
+  const storeProperties = getProperties(bdux, props, stores)
 
-  const dispose = useMemo(() => (
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialState = useMemo(() => getInitialState(storeProperties), [])
+  const [, setForceUpdate] = useState(0)
+  const stateRef = useRef(initialState)
+  const disposeRef = useRef()
+
+  disposeRef.current = useMemo(() => {
+    const { current: dispose } = disposeRef
+    if (dispose) {
+      // unsubscribe from the previous store properties.
+      dispose()
+    }
+    // dont trigger redundant forceUpdate when we are already rendering.
+    let isFirstRender = true
     // subscribe to store properties.
-    Bacon.combineTemplate(skipProperties(getStoreProperties()))
-      .skip(1)
-      .onValue(setState)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [])
+    return Bacon.combineTemplate(skipProperties(storeProperties))
+      .onValue((val) => {
+        stateRef.current = val
+        if (!isFirstRender) {
+          setForceUpdate(inc)
+        }
+        isFirstRender = false
+      })
+  }, [skipProperties, storeProperties])
 
   const unmount = () => {
-    dispose()
+    disposeRef.current()
     removeProperties({ ...props, bdux })(stores)
   }
 
   useEffect(
     () => {
       // trigger callback actions.
-      const data = assoc('props', props, state)
+      const data = assoc('props', props, stateRef.current)
       forEach(callback => dispatch(callback(data)), callbacks)
       // unsubscribe.
       return unmount
@@ -126,7 +167,7 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
   const params = {
     dispatch,
     bindToDispatch,
-    state,
+    state: stateRef.current,
   }
   return {
     ...useCustomHooks(props, params),
@@ -134,6 +175,10 @@ export const useBdux = (props, stores = {}, ...callbacks) => {
   }
 }
 
-export const createUseBdux = (stores = {}, ...callbacks) => props => (
-  useBdux(props, stores, ...callbacks)
+export const createUseBdux = (
+  stores = {},
+  callbacks = [],
+  skipDuplicates = skipPropertiesDefault,
+) => props => (
+  useBdux(props, stores, callbacks, skipDuplicates)
 )

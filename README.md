@@ -126,46 +126,56 @@ export default createStore(
 ```
 
 ## Component
-Component with dependent stores can be created using `createComponent(Componenet, stores = {}, ...callbacks)` or `createComponent(stores = {}, ...callbacks)(Componenet)`.
-- `Component` is a React component.
+Component can subscribe to dependent stores using hooks `useBdux(props, stores = {}, callbacks = [], skipDuplicates)` or `createUseBdux(stores = {}, callbacks = [], skipDuplicates)(props)`.
 - `stores` is an object of dependent stores.
-- `callbacks` are functions to be triggered after subscribing to stores.
+- `callbacks` is any array of functions to be triggered after subscribing to stores.
+- `skipDuplicates` is a function to map store properties. The default behaviour is `map(property => property.skipDuplicates())`.
 
-Additional props are passed to `Component`:
-- `dispatch` the return value of an action creator.
+The hooks return an object of:
+- `state` is an object of the current values of stores.
+- `dispatch` is a function to dispatch the return value of an action creator to stores.
 - `bindToDispatch` binds a single action creator or an object of action creators to dispatch actions to stores.
 
 Example of a component:
 ```javascript
 import R from 'ramda'
-import React from 'react'
+import React, { useMemo, useCallback } from 'react'
 import * as CountDownAction from '../actions/countdown-action'
 import CountDownStore from '../stores/countdown-store'
-import { createComponent } from 'bdux'
+import { createUseBdux } from 'bdux'
 
-const handleDoubleClick = ({ dispatch }) => () => {
-  dispatch(CountDownAction.doubleClick())
-}
+const useBdux = createUseBdux({
+  countdown: CountDownStore
+}, [
+  // start counting down.
+  CountDownAction.countdown
+])
 
-export const CountDown = (props) => (
-  R.is(Number, props.countdown) && (
+const CountDown = (props) => {
+  const { state, dispatch, bindToDispatch } = useBdux(props)
+
+  const handleClick = useMemo(() => (
+    bindToDispatch(CountDownAction.click)
+  ), [bindToDispatch])
+
+  const handleDoubleClick = useCallback(() => {
+    dispatch(CountDownAction.doubleClick())
+  }, [dispatch])
+
+  return state && R.is(Number, state.countdown) && (
     <button
-      onClick={ props.bindToDispatch(CountDownAction.click) }
-      onDoubleClick={ handleDoubleClick(props) }
+      onClick={ handleClick }
+      onDoubleClick={ handleDoubleClick }
     >
-      { props.countdown }
+      { state.countdown }
     </button>
   )
-)
+}
 
-export default createComponent(CountDown, {
-  countdown: CountDownStore
-},
-// start counting down.
-CountDownAction.countdown)
+export default React.memo(CountDown)
 ```
 
-Wrap the entire app in a bdux context provider optionally to avoid of using global dispatcher and stores, which is very useful for server side rendering to isolate requests.
+Wrap the entire app in a bdux context provider optionally to avoid of using global dispatcher and stores, which is also useful for server side rendering to isolate requests.
 ```javascript
 import React from 'react'
 import ReactDOM from 'react-dom'
@@ -190,10 +200,10 @@ ReactDOM.render(
 ```
 
 ## Middleware
-Middleware exports `getPreReduce`, `getPostReduce` and `decorateComponent` optionally.
+Middleware exports `getPreReduce`, `getPostReduce` and `useHook` optionally.
 - `getPreReduce` returns a `Pluggable` stream to be applied before all reducers.
 - `getPostReduce` returns a `Pluggable` stream to be applied after reducers.
-- `decorateComponent` decorates all components created by `createComponent`.
+- `useHook` is triggered in all components which include `useBdux`.
 
 Example of a middleware:
 ```javascript

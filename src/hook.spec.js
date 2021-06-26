@@ -4,14 +4,14 @@ import * as R from 'ramda'
 import chai from 'chai'
 import sinon from 'sinon'
 import * as Bacon from 'baconjs'
-import React from 'react'
+import React, { useRef } from 'react'
 import { JSDOM } from 'jsdom'
 import { shallow, mount } from 'enzyme'
 import BduxContext from './context'
 import Common from './utils/common-util'
 import { useBdux, createUseBdux } from './hook'
 import { createStore } from './store'
-import { createDispatcher, getActionStream } from './dispatcher'
+import { createDispatcher, getActionStream, dispatchAction } from './dispatcher'
 import { clearMiddlewares, applyMiddleware } from './middleware'
 
 const createPluggable = (log = R.F) => () => {
@@ -201,7 +201,7 @@ describe('Hook', () => {
         return null
       }
 
-      mount(<Test />)
+      mount(<Test id="a" />)
       getActionStream().push({ type: 'test2' })
       chai.expect(callback.callCount).to.equal(2)
       chai.expect(callback.lastCall.args[0]).to.have.property('state')
@@ -222,7 +222,7 @@ describe('Hook', () => {
         return null
       }
 
-      mount(<Test />)
+      mount(<Test id="b"/>)
       getActionStream().push(action)
       getActionStream().push(action)
       chai.expect(callback.callCount).to.equal(1)
@@ -286,6 +286,57 @@ describe('Hook', () => {
       mount(<Test />)
       getActionStream().push({})
       chai.expect(logReduce.callCount).to.equal(2)
+    })
+
+    it('should subscribe to multiple stores on update', () => {
+      const render = sinon.stub()
+      const store = createStore('name', createPluggable())
+      const Test = (props) => {
+        const countRef = useRef(1)
+        const { state } = useBdux(props, countRef.current <= 1
+          ? { test1: store } : { test1: store, test2: store })
+        countRef.current += 1
+        render(state)
+        return null
+      }
+
+      const wrapper = mount(<Test />)
+      wrapper.setProps({})
+      chai.expect(render.callCount).to.equal(2)
+      chai.expect(render.firstCall.args[0]).to.eql({ test1: null })
+      chai.expect(render.secondCall.args[0]).to.eql({ test1: null, test2: null })
+      wrapper.unmount()
+    })
+
+    it('should subscribe to a different store instance by props', () => {
+      const logReduce = sinon.stub()
+      const store = createStore(R.prop('id'), createPluggable(logReduce))
+      const Test = (props) => {
+        useBdux(props, { test: store })
+        return null
+      }
+
+      const wrapper = mount(<Test id="1" />)
+      wrapper.setProps({ id: '2' })
+      getActionStream().push({})
+      chai.expect(logReduce.callCount).to.equal(1)
+      chai.expect(logReduce.firstCall.args[0].name).to.equal('2')
+      wrapper.unmount()
+    })
+
+    it('should subscribe to the same store instance by props', () => {
+      const getReducer = sinon.spy(createPluggable())
+      const store = createStore(R.prop('id'), getReducer)
+      const Test = (props) => {
+        useBdux(props, { test: store })
+        return null
+      }
+
+      const wrapper = mount(<Test id="1" />)
+      wrapper.setProps({ id: '1' })
+      getActionStream().push({})
+      chai.expect(getReducer.callCount).to.equal(1)
+      wrapper.unmount()
     })
 
     it('should unsubscribe from a store on unmount', () => {
@@ -372,7 +423,7 @@ describe('Hook', () => {
       const callback = sinon.stub()
       const store = createStore('name', createPluggable())
       const Test = (props) => {
-        useBdux(props, { test: store }, callback)
+        useBdux(props, { test: store }, [callback])
         return null
       }
 
@@ -388,7 +439,7 @@ describe('Hook', () => {
       const callback = sinon.stub()
       const store = createStore('name', createPluggable())
       const Test = (props) => {
-        useBdux(props, { test: store }, callback)
+        useBdux(props, { test: store }, [callback])
         return null
       }
 
@@ -412,9 +463,10 @@ describe('Hook', () => {
           {
             test1: createStore('name1', createPluggable()),
             test2: createStore('name2', createPluggable())
-          },
-          callback1,
-          callback2
+          }, [
+            callback1,
+            callback2,
+          ]
         )
 
         return null
@@ -436,7 +488,7 @@ describe('Hook', () => {
         stores: new WeakMap()
       }
       const Test = (props) => {
-        useBdux(props, {}, R.always({ type: 'test' }))
+        useBdux(props, {}, [R.always({ type: 'test' })])
         return null
       }
       const dispose = bdux.dispatcher
@@ -458,13 +510,90 @@ describe('Hook', () => {
       dispose()
     })
 
+    it('should skip duplicates if stores stay the same', () => {
+      const callback = sinon.stub()
+      const store = createStore('name', () => {
+        const stream = new Bacon.Bus()
+        return {
+          input: stream,
+          output: stream.map(R.prop('state'))
+        }
+      })
+      const Test = (props) => {
+        const { state } = useBdux(props, {
+          test1: store,
+          test2: store,
+        })
+        callback(state)
+        return null
+      }
+
+      mount(<Test />)
+      dispatchAction({})
+      chai.expect(callback.callCount).to.equal(1)
+      chai.expect(callback.lastCall.args[0]).to.eql({
+        test1: null,
+        test2: null,
+      })
+    })
+
+    it('should not skip duplicates if stores have changed', () => {
+      const callback = sinon.stub()
+      const store = createStore('name', () => {
+        const stream = new Bacon.Bus()
+        return {
+          input: stream,
+          output: stream.map(({ state }) => (state || 0) + 1)
+        }
+      })
+      const Test = (props) => {
+        const { state } = useBdux(props, {
+          test1: store,
+          test2: store,
+        })
+        callback(state)
+        return null
+      }
+
+      mount(<Test />)
+      dispatchAction({})
+      chai.expect(callback.callCount).to.equal(2)
+      chai.expect(callback.lastCall.args[0]).to.eql({
+        test1: 1,
+        test2: 1,
+      })
+    })
+
+    it('should customise skip duplicates', () => {
+      const callback = sinon.stub()
+      const store = createStore('name1', () => {
+        const stream = new Bacon.Bus()
+        return {
+          input: stream,
+          output: stream.map(({ state }) => (state || 0) + 1)
+        }
+      })
+      const skipDuplicates = R.map(
+        property => property.skipDuplicates(R.T)
+      )
+      const Test = (props) => {
+        const { state } = useBdux(props, { test: store }, [], skipDuplicates)
+        callback(state)
+        return null
+      }
+
+      mount(<Test />)
+      dispatchAction({})
+      chai.expect(callback.callCount).to.equal(1)
+      chai.expect(callback.lastCall.args[0]).to.have.property('test', null)
+    })
+
     it('should create bdux hook', () => {
       const callback1 = sinon.stub()
       const callback2 = sinon.stub()
       const useBdux = createUseBdux(
         { test: createStore('name', createPluggable()) },
-        callback1,
-        callback2
+        [callback1, callback2]
       )
       const Test = (props) => {
         useBdux(props)
