@@ -2,7 +2,7 @@
 
 A [Flux](https://github.com/facebook/flux/) architecture implementation out of enjoyment of [Bacon.js](https://baconjs.github.io/), [Redux](http://redux.js.org/) and [React](https://facebook.github.io/react/).
 
-[![Build Status](https://travis-ci.com/Intai/bdux.svg?branch=master)](https://travis-ci.com/Intai/bdux)
+[![Build Status](https://app.travis-ci.com/Intai/bdux.svg?branch=master)](https://app.travis-ci.com/Intai/bdux)
 [![Coverage Status](https://coveralls.io/repos/github/Intai/bdux/badge.svg?branch=master)](https://coveralls.io/github/Intai/bdux?branch=master)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/ddd525f402f149d083a44c22ed0f3317)](https://www.codacy.com/gh/Intai/bdux/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Intai/bdux&amp;utm_campaign=Badge_Grade)
 
