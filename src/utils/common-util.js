@@ -4,7 +4,7 @@ import {
   once,
 } from 'ramda';
 
-export const canUseDOM = () => (
+export const canUseDOM = () => !!(
   typeof window !== 'undefined'
     && window.document
     && window.document.createElement

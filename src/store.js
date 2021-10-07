@@ -14,7 +14,13 @@ import {
   propEq,
   reduce,
 } from 'ramda'
-import * as Bacon from 'baconjs'
+import {
+  Bus,
+  combineTemplate,
+  fromBinder,
+  when,
+  zipWith,
+} from 'baconjs'
 import { defaultContextValue } from './context'
 import { preReduces, postReduces, defaultValues } from './middleware'
 
@@ -39,7 +45,7 @@ const wrapReducer = (getReducer) => (params) => {
   const pluggable = getReducer(params)
   return {
     input: pluggable.input,
-    output: Bacon.zipWith(pluggable.input, pluggable.output,
+    output: zipWith(pluggable.input, pluggable.output,
       mergeNextState)
   }
 }
@@ -60,7 +66,7 @@ const plugPreReducerPost = (name, dispatcher, getReducer, reducerArgs) => {
   // pass the store name to middlewares.
   return reduce(plugStreams(params),
     // pass action and store states,
-    Bacon.when(reducerArgs, mapPreArgs)
+    when(reducerArgs, mapPreArgs)
       // merge in the store name.
       .map(merge(params)),
     // to pre-reduce middlewares, reducer then post-reduce.
@@ -86,7 +92,7 @@ const getDefaultValue = (name) => {
 }
 
 const getStoreProperties = (props, otherStores) => (
-  Bacon.combineTemplate(map(
+  combineTemplate(map(
     store => store.getProperty(props),
     otherStores
   ))
@@ -139,17 +145,17 @@ const getFirstActionInQueue = ({ queue }) => (
 
 const createStoreInstance = (getReducer, otherStores) => (name, props) => {
   // store properties.
-  const storeStream = new Bacon.Bus()
+  const storeStream = new Bus()
   const defaultValue = getDefaultValue(name)
   const storeProperty = storeStream.toProperty(defaultValue)
   const otherProperties = getStoreProperties(props, otherStores)
   const dispatcher = getContext(props).dispatcher
   const queue = accumActionSeed(getAccumSeed)
 
-  const actionStream = Bacon.when(
+  const actionStream = when(
     [dispatcher.getActionStream()], objOf('action'),
     [storeStream], F,
-    [Bacon.fromBinder(() => queue.clear)], F
+    [fromBinder(() => queue.clear)], F
   )
   // accumulate actions into a fifo queue.
   .map(queue.accum)

@@ -12,7 +12,7 @@ import {
   pipe,
   values,
 } from 'ramda'
-import * as Bacon from 'baconjs'
+import { combineTemplate } from 'baconjs'
 import React from 'react'
 import Common from './utils/common-util'
 import BduxContext from './context'
@@ -55,7 +55,7 @@ const getProperties = (component) => map((store) => (
 ))
 
 const triggerCallbacks = (component, stores, callbacks) => (
-  Bacon.combineTemplate({
+  combineTemplate({
     ...getProperties(component)(stores),
     props: component.props
   })

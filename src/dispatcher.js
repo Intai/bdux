@@ -12,14 +12,14 @@ import {
   T,
   tap,
 } from 'ramda'
-import * as Bacon from 'baconjs'
+import { Bus, EventStream, Property } from 'baconjs'
 import Common from './utils/common-util'
 
 export const createDispatcher = () => {
   // stream actions from creators to stores.
-  const actionStream = new Bacon.Bus()
+  const actionStream = new Bus()
   // stream to be triggered on subscription.
-  const subscribeStream = new Bacon.Bus()
+  const subscribeStream = new Bus()
   // the latest subscription.
   const subscribeProperty = subscribeStream
     .toProperty({})
@@ -88,8 +88,8 @@ export const createDispatcher = () => {
   const dispatchAction = cond([
     [not, identity],
     // plug an observable to flow actions through the dispatcher.
-    [is(Bacon.EventStream), tap(plugEventStream)],
-    [is(Bacon.Property), tap(plugProperty)],
+    [is(EventStream), tap(plugEventStream)],
+    [is(Property), tap(plugProperty)],
     // push a single action through the dispatcher.
     [T, tap(pushAction)]
   ])

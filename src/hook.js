@@ -11,7 +11,7 @@ import {
   pathOr,
   reduce,
 } from 'ramda'
-import * as Bacon from 'baconjs'
+import { combineTemplate, noMore } from 'baconjs'
 import { useContext, useState, useRef, useMemo, useEffect } from 'react'
 import Common from './utils/common-util'
 import BduxContext from './context'
@@ -83,7 +83,7 @@ const getInitialState = (storeProperties) => {
       property
         // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
         .doAction(val => initial[name] = val)
-        .onValue(() => Bacon.noMore)
+        .onValue(() => noMore)
     },
     storeProperties
   )
@@ -130,7 +130,7 @@ export const useBdux = (
     // dont trigger redundant forceUpdate when we are already rendering.
     let isFirstRender = true
     // subscribe to store properties.
-    return Bacon.combineTemplate(skipProperties(storeProperties))
+    return combineTemplate(skipProperties(storeProperties))
       .onValue((val) => {
         stateRef.current = val
         if (!isFirstRender) {
