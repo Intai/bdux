@@ -12,6 +12,22 @@
     "./middleware": {
       "import": "./es/middleware.js",
       "require": "./lib/middleware.js"
+    },
+    "./context": {
+      "import": "./es/context.js",
+      "require": "./lib/context.js"
+    },
+    "./dispatcher": {
+      "import": "./es/dispatcher.js",
+      "require": "./lib/dispatcher.js"
+    },
+    "./store": {
+      "import": "./es/store.js",
+      "require": "./lib/store.js"
+    },
+    "./hook": {
+      "import": "./es/hook.js",
+      "require": "./lib/hook.js"
     }
   },
   "scripts": {
