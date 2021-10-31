@@ -53,41 +53,39 @@
   },
   "homepage": "https://github.com/Intai/bdux",
   "dependencies": {
-    "ramda": "^0.27.0"
+    "@babel/plugin-proposal-class-properties": "^7.16.0",
+    "ramda": "^0.27.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.10.3",
-    "@babel/plugin-proposal-class-properties": "^7.10.1",
-    "@babel/plugin-proposal-object-rest-spread": "^7.10.3",
-    "@babel/plugin-syntax-object-rest-spread": "^7.8.3",
-    "@babel/preset-env": "^7.10.3",
-    "@babel/preset-react": "^7.10.1",
-    "@babel/register": "^7.10.3",
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.0",
+    "@babel/preset-react": "^7.16.0",
+    "@babel/register": "^7.16.0",
+    "@wojtekmaj/enzyme-adapter-react-17": "^0.6.5",
     "babel-eslint": "^10.1.0",
-    "babel-plugin-istanbul": "^6.0.0",
-    "baconjs": "^3.0.13",
-    "chai": "^4.2.0",
-    "coveralls": "^3.1.0",
-    "cross-env": "^7.0.2",
-    "del": "^5.1.0",
+    "babel-plugin-istanbul": "^6.1.1",
+    "baconjs": "^3.0.17",
+    "chai": "^4.3.4",
+    "coveralls": "^3.1.1",
+    "cross-env": "^7.0.3",
+    "del": "^6.0.0",
     "enzyme": "^3.11.0",
-    "enzyme-adapter-react-16": "^1.15.2",
-    "eslint": "^7.29.0",
-    "eslint-plugin-react": "^7.24.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-react": "^7.26.1",
     "eslint-plugin-react-hooks": "^4.2.0",
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
     "gulp-eslint": "^6.0.0",
-    "jsdom": "^16.6.0",
-    "mocha": "^9.0.1",
+    "jsdom": "^18.0.0",
+    "mocha": "^9.1.3",
     "nyc": "^15.1.0",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-test-renderer": "^16.13.1",
-    "sinon": "^9.0.2"
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-test-renderer": "^17.0.2",
+    "sinon": "^11.1.2"
   },
   "peerDependencies": {
     "baconjs": "^1.0.0 || ^2.0.0 || ^3.0.0",
-    "react": "^16.8.0"
+    "react": "^17.0.0"
   }
 }

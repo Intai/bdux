@@ -4,8 +4,7 @@
     "ecmaVersion": 6,
     "sourceType": "module",
     "ecmaFeatures": {
-      "jsx": true,
-      "experimentalObjectRestSpread": true
+      "jsx": true
     }
   },
   "env": {
@@ -27,10 +26,10 @@
     }
   },
   "rules": {
-    "no-console": 0,
-    "quotes": [2, "single"],
-    "jsx-quotes": 1,
-    "react/prop-types": 0,
+    "no-console": "off",
+    "quotes": ["error", "single"],
+    "jsx-quotes": "warn",
+    "react/prop-types": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn"
   }
