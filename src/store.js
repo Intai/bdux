@@ -7,7 +7,7 @@ import {
   ifElse,
   is,
   map,
-  merge,
+  mergeRight,
   objOf,
   pipe,
   prop,
@@ -28,7 +28,7 @@ const STATUS_DISPATCH = 'dispatch'
 const STATUS_ONHOLD = 'onhold'
 
 const mapPreArgs = (action, state, others) => (
-  merge({
+  mergeRight({
     action: action,
     state: state
   },
@@ -36,7 +36,7 @@ const mapPreArgs = (action, state, others) => (
 )
 
 const mergeNextState = (reducerArgs, nextState) => (
-  merge(reducerArgs, {
+  mergeRight(reducerArgs, {
     nextState: nextState
   })
 )
@@ -68,7 +68,7 @@ const plugPreReducerPost = (name, dispatcher, getReducer, reducerArgs) => {
     // pass action and store states,
     when(reducerArgs, mapPreArgs)
       // merge in the store name.
-      .map(merge(params)),
+      .map(mergeRight(params)),
     // to pre-reduce middlewares, reducer then post-reduce.
     flatten([preReduces.get(), wrapReducer(getReducer), postReduces.get()])
   )

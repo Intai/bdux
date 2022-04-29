@@ -178,7 +178,7 @@ export default React.memo(CountDown)
 Wrap the entire app in a bdux context provider optionally to avoid of using global dispatcher and stores, which is also useful for server side rendering to isolate requests.
 ```javascript
 import React from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client';
 import { BduxContext, createDispatcher } from 'bdux'
 import App from './components/app'
 
@@ -193,10 +193,8 @@ const renderApp = () => (
   </BduxContext.Provider>
 )
 
-ReactDOM.render(
-  renderApp(),
-  document.getElementById('app')
-)
+createRoot(document.getElementById('app'));
+  .render(renderApp())
 ```
 
 ## Middleware

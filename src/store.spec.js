@@ -27,7 +27,7 @@ const createPostLogger = (log) => ({
   getPostReduce: createPluggable(log)
 })
 
-const createLogger = (logPre, logPost) => R.merge(
+const createLogger = (logPre, logPost) => R.mergeRight(
   createPreLogger(logPre),
   createPostLogger(logPost)
 )

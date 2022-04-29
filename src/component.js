@@ -7,7 +7,7 @@ import {
   juxt,
   map,
   mapObjIndexed,
-  merge,
+  mergeRight,
   pathOr,
   pipe,
   values,
@@ -110,7 +110,7 @@ export const decorateToSubscribeStores = (Component, stores = {}, callbacks = []
 
     render() {
       const element = React.createElement(
-        Component, merge(this.props, this.state))
+        Component, mergeRight(this.props, this.state))
 
       // assuming server renders only once.
       if (Common.isOnServer()) {

@@ -5,7 +5,7 @@ import {
   ifElse,
   is,
   map,
-  merge,
+  mergeRight,
   not,
   objOf,
   pipe,
@@ -30,7 +30,7 @@ export const createDispatcher = () => {
   })()
 
   const mergeId = converge(
-    merge, [
+    mergeRight, [
       pipe(generateActionId, objOf('id')),
       identity
     ]

@@ -1,6 +1,1 @@
-import Enzyme from 'enzyme'
-import Adapter from '@wojtekmaj/enzyme-adapter-react-17'
-
-Enzyme.configure({
-  adapter: new Adapter()
-})
+global.IS_REACT_ACT_ENVIRONMENT = true;
