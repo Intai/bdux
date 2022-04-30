@@ -63,9 +63,11 @@ describe('Common Utilities', () => {
   })
 
   it('should get time from date object', () => {
+    const now = Date.now
     Date.now = null
     chai.expect(getTimeFunc()).to.be.a('function')
     chai.expect(getTimeFunc()()).to.be.a('number')
+    Date.now = now
   })
 
 })
