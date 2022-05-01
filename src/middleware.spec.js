@@ -7,7 +7,7 @@ import {
   clearMiddlewares,
   applyMiddleware } from './middleware'
 
-describe('middleware', () => {
+describe('Middleware', () => {
 
   const createPreReduce = () => ({
     getPreReduce: R.F

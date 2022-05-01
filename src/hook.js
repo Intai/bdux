@@ -5,14 +5,13 @@ import {
   forEachObjIndexed,
   keys,
   identity,
-  inc,
   map,
   mergeRight,
   pathOr,
   reduce,
 } from 'ramda'
 import { combineTemplate, noMore } from 'baconjs'
-import { useContext, useState, useRef, useMemo, useEffect } from 'react'
+import { useContext, useCallback, useMemo, useEffect, useSyncExternalStore } from 'react'
 import Common from './utils/common-util'
 import BduxContext from './context'
 import { hooks } from './middleware'
@@ -75,19 +74,29 @@ const removeProperties = props => map(
   store => store.removeProperty(props)
 )
 
-const getInitialState = (storeProperties) => {
-  let initial = {}
-  // forEach instead of combineTemplate to be synchronous.
-  forEachObjIndexed(
-    (property, name) => {
-      property
-        // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
-        .doAction(val => initial[name] = val)
-        .onValue(() => noMore)
-    },
-    storeProperties
-  )
-  return initial
+const getSnapshotsMemo = (storeProperties) => {
+  let cached = {}
+
+  return () => {
+    let initial = {}
+
+    // forEach instead of combineTemplate to be synchronous.
+    forEachObjIndexed(
+      (property, name) => {
+        property
+          // todo: workaround baconjs v2 bug causing onValue to be not synchronous.
+          .doAction(val => initial[name] = val)
+          .onValue(() => noMore)
+      },
+      storeProperties
+    )
+
+    if (!shallowEqual(cached, initial)) {
+      // cache the store snapshots.
+      cached = initial
+    }
+    return cached
+  }
 }
 
 const useCustomHooks = (props, params) => (
@@ -114,41 +123,31 @@ export const useBdux = (
   const bindToDispatch = getBindToDispatch(bdux)
   const getProperties = useMemo(() => getPropertiesMemo(), [])
   const storeProperties = getProperties(bdux, props, stores)
+  const getSnapshots = useMemo(() => getSnapshotsMemo(storeProperties), [storeProperties])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initialState = useMemo(() => getInitialState(storeProperties), [])
-  const [, setForceUpdate] = useState(0)
-  const stateRef = useRef(initialState)
-  const disposeRef = useRef()
+  const state = useSyncExternalStore(
+    useCallback((callback) => (
+      Common.isOnServer()
+        // assuming only render once on server.
+        ? undefined
+        // subscribe to stores in browser.
+        : combineTemplate(skipProperties(storeProperties))
+          .changes()
+          .onValue(callback)
+    ), [skipProperties, storeProperties]),
 
-  disposeRef.current = useMemo(() => {
-    const { current: dispose } = disposeRef
-    if (dispose) {
-      // unsubscribe from the previous store properties.
-      dispose()
-    }
-    // dont trigger redundant forceUpdate when we are already rendering.
-    let isFirstRender = true
-    // subscribe to store properties.
-    return combineTemplate(skipProperties(storeProperties))
-      .onValue((val) => {
-        stateRef.current = val
-        if (!isFirstRender) {
-          setForceUpdate(inc)
-        }
-        isFirstRender = false
-      })
-  }, [skipProperties, storeProperties])
+    // combine store snapshots.
+    getSnapshots
+  )
 
   const unmount = () => {
-    disposeRef.current()
     removeProperties({ ...props, bdux })(stores)
   }
 
   useEffect(
     () => {
       // trigger callback actions.
-      const data = assoc('props', props, stateRef.current)
+      const data = assoc('props', props, state)
       forEach(callback => dispatch(callback(data)), callbacks)
       // unsubscribe.
       return unmount
@@ -167,7 +166,7 @@ export const useBdux = (
   const params = {
     dispatch,
     bindToDispatch,
-    state: stateRef.current,
+    state,
   }
   return {
     ...useCustomHooks(props, params),

@@ -404,6 +404,28 @@ describe('Hook', () => {
     chai.expect(logReduce.called).to.be.false
   })
 
+  it('should remove store by props on server', () => {
+    Common.isOnServer.returns(true)
+
+    const getInstance = props => ({
+      name: props.id,
+      isRemovable: true
+    })
+
+    const store = createStore(getInstance, createPluggable())
+    const getProperty = sandbox.spy(store, 'getProperty')
+    const Test = (props) => {
+      useBdux(props, { test: store })
+      return null
+    }
+
+    const props = { id: '1' }
+    render(<Test {...props} />)
+    const property1 = getProperty.firstCall.returnValue
+    const property2 = store.getProperty(props)
+    chai.expect(property1 === property2).to.be.false
+  })
+
   it('should remove store by props on unmount', () => {
     const getInstance = props => ({
       name: props.id,
