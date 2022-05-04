@@ -201,6 +201,34 @@ describe('Hook', () => {
       })
   })
 
+  it('should receive state update from bacon property action', () => {
+    const callback = sinon.stub()
+    const store = createStore('name', createPluggable())
+    const bdux = {
+      dispatcher: createDispatcher(),
+      stores: new WeakMap()
+    }
+    const Test = (props) => {
+      callback(useBdux(props, { test: store }))
+      return null
+    }
+
+    render(
+      <BduxContext.Provider value={bdux}>
+        <Test id="a" />
+      </BduxContext.Provider>
+    )
+    act(() => {
+      bdux.dispatcher.dispatchAction(
+        Bacon.constant({ type: 'test2' }).first())
+    })
+    chai.expect(callback.callCount).to.equal(2)
+    chai.expect(callback.lastCall.args[0]).to.have.nested.property('state.test')
+      .and.include({
+        type: 'test2'
+      })
+  })
+
   it('should not re-render without state change', () => {
     const callback = sinon.stub()
     const action = { type: 'test3' }

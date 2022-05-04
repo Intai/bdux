@@ -132,7 +132,6 @@ export const useBdux = (
         ? undefined
         // subscribe to stores in browser.
         : combineTemplate(skipProperties(storeProperties))
-          .changes()
           .onValue(callback)
     ), [skipProperties, storeProperties]),
 
