@@ -137,6 +137,7 @@ export const useBdux = (
     ), [skipProperties, storeProperties]),
 
     // combine store snapshots.
+    getSnapshots,
     getSnapshots
   )
 
