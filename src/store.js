@@ -1,4 +1,5 @@
 import {
+  always,
   append,
   complement,
   drop,
@@ -80,11 +81,16 @@ const partialStoreName = (name) => (getter) => (previous) => (
   getter(name, previous)
 )
 
-const getDefaultValue = (name) => {
+const getDefaultValue = config => {
+  const { name, defaultValue } = config
+
   const getters = map(
     partialStoreName(name),
     defaultValues.get()
   )
+  if (defaultValue !== undefined) {
+    getters.splice(0, 0, always(defaultValue))
+  }
 
   return (getters.length > 0)
     ? pipe(...getters)(null)
@@ -143,10 +149,11 @@ const getFirstActionInQueue = ({ queue }) => (
   queue[0]
 )
 
-const createStoreInstance = (getReducer, otherStores) => (name, props) => {
+const createStoreInstance = (getReducer, otherStores) => (config, props) => {
   // store properties.
+  const { name } = config
   const storeStream = new Bus()
-  const defaultValue = getDefaultValue(name)
+  const defaultValue = getDefaultValue(config)
   const storeProperty = storeStream.toProperty(defaultValue)
   const otherProperties = getStoreProperties(props, otherStores)
   const dispatcher = getContext(props).dispatcher
@@ -182,16 +189,22 @@ const createStoreInstance = (getReducer, otherStores) => (name, props) => {
   .toProperty(defaultValue)
 }
 
-const getPropertyInstance = (name, instances, props, createInstance) => (
-  (name in instances)
+const getPropertyInstance = ({
+  instances,
+  config,
+  props,
+  createInstance,
+}) => {
+  const { name } = config
+  return (name in instances)
     ? instances[name]
-    : (instances[name] = createInstance(name, props))
-)
+    : (instances[name] = createInstance(config, props))
+}
 
-const config = (firstArg, props) => {
-  const data = (typeof firstArg === 'function')
-    ? firstArg(props)
-    : firstArg
+const applyConfig = (getConfig, props) => {
+  const data = (typeof getConfig === 'function')
+    ? getConfig(props)
+    : getConfig
 
   return (data && typeof data === 'object')
     ? data
@@ -221,20 +234,24 @@ const getStoreInstances = (store, props) => {
   }
 }
 
-const getProperty = (getConfig, createInstance, store) => (props) => {
+const getProperty = (getConfig, createInstance, store) => props => {
+  const config = applyConfig(getConfig, props)
+
+  // trigger bacon property action on subscription.
   subscribeToDispatcher(props)
-  return getPropertyInstance(
-    config(getConfig, props).name,
-    getStoreInstances(store, props),
+  // either an existing store instance, or initialise the first one.
+  return getPropertyInstance({
+    instances: getStoreInstances(store, props),
+    config,
     props,
-    createInstance
-  )
+    createInstance,
+  })
 }
 
-const removeProperty = (getConfig, store) => (props) => {
-  const { name, isRemovable } = config(getConfig, props)
-  if (isRemovable) {
-    delete getStoreInstances(store, props)[name]
+const removeProperty = (getConfig, store) => props => {
+  const config = applyConfig(getConfig, props)
+  if (config.isRemovable) {
+    delete getStoreInstances(store, props)[config.name]
   }
 }
 

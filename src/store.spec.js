@@ -388,6 +388,102 @@ describe('Store', () => {
     })
   })
 
+  it('should configure store default value', () => {
+    clearMiddlewares()
+
+    const callback = sinon.stub()
+    const store = createStore(() => ({
+      name: 'name',
+      defaultValue: {
+        list: [],
+      },
+    }), createPluggable())
+
+    store.getProperty().onValue(callback)
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.eql({
+      list: [],
+    })
+  })
+
+  it('should pass configured store default value to middlewares', () => {
+    const callback1 = sinon.stub()
+    const callback2 = sinon.stub()
+    clearMiddlewares()
+    applyMiddleware(
+      {
+        getDefaultValue: callback1.returns({
+          array: ['item1'],
+        }),
+      }, {
+        getDefaultValue: callback2,
+      },
+    )
+
+    const store = createStore(() => ({
+      name: 'collection',
+      defaultValue: {
+        array: [],
+      },
+    }), createPluggable())
+
+    store.getProperty().onValue()
+    chai.expect(callback1.calledOnce).to.be.true
+    chai.expect(callback1.lastCall.args).to.eql([
+      'collection', {
+        array: [],
+      }
+    ])
+    chai.expect(callback2.calledOnce).to.be.true
+    chai.expect(callback2.lastCall.args).to.eql([
+      'collection', {
+        array: ['item1'],
+      }
+    ])
+  })
+
+  it('should handle undefined configured store default value', () => {
+    clearMiddlewares()
+
+    const callback = sinon.stub()
+    const store = createStore(() => ({
+      name: 'name',
+      defaultValue: undefined,
+    }), createPluggable())
+
+    store.getProperty().onValue(callback)
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.equal(null)
+  })
+
+  it('should handle false configured store default value', () => {
+    clearMiddlewares()
+
+    const callback = sinon.stub()
+    const store = createStore(() => ({
+      name: 'name',
+      defaultValue: false,
+    }), createPluggable())
+
+    store.getProperty().onValue(callback)
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.equal(false)
+  })
+
+  it('should handle empty string configured store default value', () => {
+    clearMiddlewares()
+
+    const callback = sinon.stub()
+    const store = createStore(() => ({
+      name: 'name',
+      defaultValue: '',
+    }), createPluggable())
+
+    store.getProperty().onValue(callback)
+    chai.expect(callback.calledOnce).to.be.true
+    chai.expect(callback.lastCall.args[0]).to.equal('')
+  })
+
   it('should set store defualt value from middleware', () => {
     clearMiddlewares()
     applyMiddleware(createDefaultValue('middleware'))

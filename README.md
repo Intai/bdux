@@ -112,16 +112,20 @@ Dealing with a collection of data is a common and repetitive theme for store. Cr
 
 Example of constrcuting store names:
 ```javascript
-const getInstance = (props) => ({
+const getConfig = props => ({
   name: `${StoreNames.PRODUCT}_${props.productId}`,
 
   // mark the store instance as removable
   // to be removed on component unmount.
-  isRemovable: true
+  isRemovable: true,
+  // default value will be null if not configured.
+  defaultValue: {
+    items: [],
+  },
 })
 
 export default createStore(
-  getInstance, getReducer
+  getConfig, getReducer
 )
 ```
 
